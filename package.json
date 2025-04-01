@@ -1,4 +1,20 @@
 {
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Thesis project",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./src/server.js",
+    "start": "node ./src/server.js"
+  },
+  "keywords": [
+    "nodejs",
+    "react"
+  ],
+  "author": {
+    "name": "thinghunggg"
+  },
   "dependencies": {
     "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
