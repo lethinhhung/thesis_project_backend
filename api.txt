@@ -1,0 +1,20 @@
+success
+
+{
+  "success": true,
+  "message": "Lấy dữ liệu thành công",
+  "data": {
+    // Dữ liệu chính
+  }
+}
+
+failed
+
+{
+  "success": false,
+  "message": "Lỗi xác thực",
+  "error": {
+    "code": "AUTH_FAILED",
+    "details": "Token không hợp lệ hoặc đã hết hạn"
+  }
+}
