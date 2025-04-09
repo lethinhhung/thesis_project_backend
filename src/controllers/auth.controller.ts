@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user';
 
 const SALTROUNDS = 10;
-const ACCESS_TOKEN_EXPIRY = '15m';
+const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_EXPIRY = '7d';
 const COOKIE_OPTIONS = {
     httpOnly: true,
