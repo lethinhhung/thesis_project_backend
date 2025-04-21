@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import User from '../models/user';
 
 export const getProfile = async (req: Request, res: Response) => {
     try {
@@ -12,10 +13,13 @@ export const getProfile = async (req: Request, res: Response) => {
                 },
             });
         } else {
+            // Fetch user details from the database using the user ID from the request
+            const userId = req.user.id; // Assuming req.user contains the authenticated user's ID
+            const user = await User.findById(userId).select('-password -__v'); // Exclude password and version field
             return res.status(200).json({
                 success: true,
                 message: 'User profile retrieved successfully',
-                data: req.user,
+                data: user,
             });
         }
     } catch (error) {
