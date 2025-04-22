@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/user';
-import { uploadAvatar } from '../utils/upload';
+import { deleteAvatar, uploadAvatar } from '../utils/upload';
 
 export const getProfile = async (req: Request, res: Response) => {
     try {
@@ -13,18 +13,36 @@ export const getProfile = async (req: Request, res: Response) => {
                     details: 'User not authenticated',
                 },
             });
-        } else {
-            // Fetch user details from the database using the user ID from the request
-            const userId = req.user.id; // Assuming req.user contains the authenticated user's ID
-            const user = await User.findById(userId).select('-password -__v'); // Exclude password and version field
-            return res.status(200).json({
-                success: true,
-                message: 'User profile retrieved successfully',
-                data: user,
+        }
+
+        const userId = req.user.id;
+        const user = await User.findById(userId).select('-password -__v');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 'USER_NOT_FOUND',
+                    details: `No user found with ID ${userId}`,
+                },
             });
         }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
+
+        return res.status(200).json({
+            success: true,
+            message: 'User profile retrieved successfully',
+            data: user,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
     }
 };
 
@@ -40,31 +58,92 @@ export const updateProfile = async (req: Request, res: Response) => {
                 },
             });
         }
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-        if (!allowedTypes.includes(req.file.mimetype)) {
-            return res.status(400).json({ message: 'Invalid file type. Only JPEG, JPG and PNG are allowed' });
+        if (req.file && !allowedTypes.includes(req.file.mimetype)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid file type',
+                error: {
+                    code: 'INVALID_FILE_TYPE',
+                    details: 'Only JPEG, JPG and PNG formats are supported',
+                },
+            });
         }
 
-        const result = await uploadAvatar(req.user.username, req.file);
-
-        if (!result) {
-            return res.status(500).json({ message: 'Error uploading file' });
+        const { name, bio } = req.body;
+        if (!name && !bio && !req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No data to update',
+                error: {
+                    code: 'NO_UPDATE_DATA',
+                    details: 'No fields provided for update',
+                },
+            });
         }
 
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        } else if (user?.profile) {
-            user.profile.avatar = result.url;
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 'USER_NOT_FOUND',
+                    details: `No user found with ID ${req.user.id}`,
+                },
+            });
+        }
+
+        if (user.profile && user.username) {
+            if (req.file && user.profile.avatar !== '') {
+                const deleted = await deleteAvatar(user.username, user.profile.avatar);
+                if (!deleted) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to delete old avatar',
+                        error: {
+                            code: 'DELETE_AVATAR_FAILED',
+                            details: 'An error occurred while deleting the old avatar image',
+                        },
+                    });
+                }
+            }
+
+            if (req.file) {
+                const uploaded = await uploadAvatar(user.username, req.file);
+                if (!uploaded) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Avatar upload failed',
+                        error: {
+                            code: 'UPLOAD_FAILED',
+                            details: 'An error occurred while uploading the avatar image',
+                        },
+                    });
+                }
+                user.profile.avatar = uploaded.url;
+            }
+
+            if (name) user.profile.name = name;
+            if (bio) user.profile.bio = bio;
+
             await user.save();
         }
 
-        res.status(200).json(result);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
+        return res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: user,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
     }
 };

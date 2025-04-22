@@ -30,3 +30,21 @@ export const uploadAvatar = async (username: string, file: Express.Multer.File) 
         throw error;
     }
 };
+
+export const deleteAvatar = async (username: string, path: string) => {
+    try {
+        const fileName = path.split('/').pop();
+        console.log('fileName', fileName);
+        const { error } = await supabase.storage
+            .from(process.env.SUPABASE_AVATARS_BUCKET_NAME!)
+            .remove([`${username}/${fileName}`]);
+
+        if (error) {
+            throw error;
+        }
+
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};
