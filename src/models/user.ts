@@ -6,9 +6,9 @@ const userSchema = new mongoose.Schema({
     password: String,
     role: { type: String, enum: ['admin', 'user'], default: 'user' },
     profile: {
-        name: String,
-        avatar: String,
-        bio: String,
+        name: { type: String, default: '' },
+        avatar: { type: String, default: '' },
+        bio: { type: String, default: '' },
         settings: {
             theme: { type: String, default: 'dark' },
             language: { type: String, default: 'en' },
