@@ -94,6 +94,7 @@ export const login = async (req: Request, res: Response) => {
                     id: user._id,
                     username: user.username,
                     email: user.email,
+                    avatar: user.profile?.avatar || null,
                 };
 
                 const accessToken = jwt.sign(payload, process.env.JWT_SECRET as string, {
@@ -113,6 +114,7 @@ export const login = async (req: Request, res: Response) => {
                         id: user._id,
                         username: user.username,
                         email: user.email,
+                        avatar: user.profile?.avatar || null,
                         accessToken,
                     },
                 });
@@ -184,6 +186,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
             id: user._id,
             username: user.username,
             email: user.email,
+            avatar: user.profile?.avatar || null,
         };
 
         const accessToken = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: ACCESS_TOKEN_EXPIRY });
