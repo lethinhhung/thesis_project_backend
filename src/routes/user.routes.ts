@@ -8,7 +8,7 @@ const router = Router();
 
 // Route yêu cầu xác thực người dùng
 router.get('/profile', authenticate as any, getProfile as any);
-router.post('/update-profile', authenticate as any, upload.single('avatar'), updateProfile as any);
+router.put('/update-profile', authenticate as any, upload.single('avatar'), updateProfile as any);
 
 // Route yêu cầu quyền admin
 router.get('/all', authenticate as any, requireAdmin as any, (req, res) => {
