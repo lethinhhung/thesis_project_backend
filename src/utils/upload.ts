@@ -1,11 +1,11 @@
 import { supabase } from '../config/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
-export const uploadAvatar = async (username: string, file: Express.Multer.File) => {
+export const uploadAvatar = async (userId: string, file: Express.Multer.File) => {
     try {
         const fileExt = file.originalname.split('.').pop();
         const fileName = `${uuidv4()}.${fileExt}`;
-        const filePath = `${username}/${fileName}`;
+        const filePath = `${userId}/${fileName}`;
 
         const { data, error } = await supabase.storage
             .from(process.env.SUPABASE_AVATARS_BUCKET_NAME!)
@@ -31,13 +31,13 @@ export const uploadAvatar = async (username: string, file: Express.Multer.File) 
     }
 };
 
-export const deleteAvatar = async (username: string, path: string) => {
+export const deleteAvatar = async (userId: string, path: string) => {
     try {
         const fileName = path.split('/').pop();
         console.log('fileName', fileName);
         const { error } = await supabase.storage
             .from(process.env.SUPABASE_AVATARS_BUCKET_NAME!)
-            .remove([`${username}/${fileName}`]);
+            .remove([`${userId}/${fileName}`]);
 
         if (error) {
             throw error;

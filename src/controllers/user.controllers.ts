@@ -95,9 +95,9 @@ export const updateProfile = async (req: Request, res: Response) => {
             });
         }
 
-        if (user.profile && user.username) {
+        if (user.profile && user._id.toString()) {
             if (req.file && user.profile.avatar !== '') {
-                const deleted = await deleteAvatar(user.username, user.profile.avatar);
+                const deleted = await deleteAvatar(user._id.toString(), user.profile.avatar);
                 if (!deleted) {
                     return res.status(500).json({
                         success: false,
@@ -111,7 +111,7 @@ export const updateProfile = async (req: Request, res: Response) => {
             }
 
             if (req.file) {
-                const uploaded = await uploadAvatar(user.username, req.file);
+                const uploaded = await uploadAvatar(user._id.toString(), req.file);
                 if (!uploaded) {
                     return res.status(500).json({
                         success: false,
