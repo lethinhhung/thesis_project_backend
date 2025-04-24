@@ -18,11 +18,11 @@ export const register = async (req: Request, res: Response) => {
     try {
         const { username, password, email } = req.body;
         if (!username || !password || !email) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Validation error',
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: 400,
                     details: 'All fields are required',
                 },
             });
@@ -30,12 +30,24 @@ export const register = async (req: Request, res: Response) => {
 
         const existingUser = await User.findOne({ username });
         if (existingUser) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'User already exists',
                 error: {
-                    code: 'USER_EXISTS',
+                    code: 409,
                     details: 'User already exists. Please choose a different username.',
+                },
+            });
+        }
+
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            return res.status(200).json({
+                success: false,
+                message: 'Email already exists',
+                error: {
+                    code: 409,
+                    details: 'Email already exists. Please choose a different email.',
                 },
             });
         }
@@ -75,11 +87,11 @@ export const login = async (req: Request, res: Response) => {
     try {
         const { username, password } = req.body;
         if (!username || !password) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Validation error',
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: 400,
                     details: 'All fields are required',
                 },
             });
@@ -119,22 +131,22 @@ export const login = async (req: Request, res: Response) => {
                     },
                 });
             } else {
-                return res.status(401).json({
+                return res.status(200).json({
                     success: false,
                     message: 'Invalid credentials',
                     error: {
-                        code: 'INVALID_CREDENTIALS',
+                        code: 401,
                         details: 'Invalid username or password',
                     },
                 });
             }
         }
 
-        return res.status(404).json({
+        return res.status(200).json({
             success: false,
             message: 'User not found',
             error: {
-                code: 'USER_NOT_FOUND',
+                code: 404,
                 details: 'User not found. Please check your username.',
             },
         });
@@ -157,11 +169,11 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
         const refreshToken = req.cookies?.refreshToken;
 
         if (!refreshToken) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Refresh token is required',
                 error: {
-                    code: 'TOKEN_REQUIRED',
+                    code: 400,
                     details: 'Refresh token is required',
                 },
             });
@@ -172,11 +184,11 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
 
         if (!user) {
             res.clearCookie('refreshToken', { path: '/' });
-            return res.status(401).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Invalid refresh token',
                 error: {
-                    code: 'INVALID_REFRESH_TOKEN',
+                    code: 401,
                     details: 'User not found for the provided refresh token',
                 },
             });
@@ -197,7 +209,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
 
         res.cookie('refreshToken', newRefreshToken, COOKIE_OPTIONS);
 
-        return res.status(200).json({
+        return res.status(201).json({
             success: true,
             message: 'New access token generated successfully',
             data: {
@@ -208,11 +220,11 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
         console.error('Token refresh failed', error);
 
         if (error instanceof jwt.JsonWebTokenError) {
-            return res.status(401).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Invalid refresh token',
                 error: {
-                    code: 'INVALID_REFRESH_TOKEN',
+                    code: 401,
                     details: 'The refresh token is invalid or expired',
                 },
             });
