@@ -14,13 +14,13 @@ const userSchema = new mongoose.Schema({
             language: { type: String, default: 'en' },
         },
     },
-    // progress: {
-    //     courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'course' }],
-    //     lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lesson' }],
-    //     pages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'page' }],
-    //     folders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'folder' }],
-    //     documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
-    // },
+    progress: {
+        courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'course' }],
+        lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lesson' }],
+        // pages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'page' }],
+        // folders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'folder' }],
+        documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
