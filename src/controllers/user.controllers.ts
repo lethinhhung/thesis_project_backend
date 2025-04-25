@@ -5,11 +5,11 @@ import { deleteAvatar, uploadAvatar } from '../utils/upload';
 export const getProfile = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
-            return res.status(401).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Unauthorized',
                 error: {
-                    code: 'UNAUTHORIZED',
+                    code: 401,
                     details: 'User not authenticated',
                 },
             });
@@ -19,11 +19,11 @@ export const getProfile = async (req: Request, res: Response) => {
         const user = await User.findById(userId).select('-password -__v');
 
         if (!user) {
-            return res.status(404).json({
+            return res.status(200).json({
                 success: false,
                 message: 'User not found',
                 error: {
-                    code: 'USER_NOT_FOUND',
+                    code: 404,
                     details: `No user found with ID ${userId}`,
                 },
             });
@@ -49,11 +49,11 @@ export const getProfile = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
-            return res.status(401).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Unauthorized',
                 error: {
-                    code: 'UNAUTHORIZED',
+                    code: 401,
                     details: 'User not authenticated',
                 },
             });
@@ -61,11 +61,11 @@ export const updateProfile = async (req: Request, res: Response) => {
 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
         if (req.file && !allowedTypes.includes(req.file.mimetype)) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Invalid file type',
                 error: {
-                    code: 'INVALID_FILE_TYPE',
+                    code: 400,
                     details: 'Only JPEG, JPG and PNG formats are supported',
                 },
             });
@@ -73,11 +73,11 @@ export const updateProfile = async (req: Request, res: Response) => {
 
         const { name, bio } = req.body;
         if (!name && !bio && !req.file) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'No data to update',
                 error: {
-                    code: 'NO_UPDATE_DATA',
+                    code: 400,
                     details: 'No fields provided for update',
                 },
             });
@@ -85,11 +85,11 @@ export const updateProfile = async (req: Request, res: Response) => {
 
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({
+            return res.status(200).json({
                 success: false,
                 message: 'User not found',
                 error: {
-                    code: 'USER_NOT_FOUND',
+                    code: 404,
                     details: `No user found with ID ${req.user.id}`,
                 },
             });
@@ -127,6 +127,7 @@ export const updateProfile = async (req: Request, res: Response) => {
 
             if (name) user.profile.name = name;
             if (bio) user.profile.bio = bio;
+            user.updatedAt = new Date();
 
             await user.save();
         }

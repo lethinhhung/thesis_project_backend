@@ -1,0 +1,167 @@
+import { Request, Response } from 'express';
+import { CreateCourse } from '../interfaces/course';
+import Course from '../models/course';
+
+export const createCourse = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
+        const userId = req.user.id;
+        const { title, description, aiGenerated }: CreateCourse = req.body;
+
+        if (!title || !description) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Title and description are required',
+                },
+            });
+        }
+
+        const course = await Course.create({
+            title,
+            description,
+            creator: userId,
+            aiGenerated: aiGenerated || false,
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: 'Course created successfully',
+            data: course,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const getCourse = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const userId = req.user.id;
+        const courseId = req.params.id;
+        const course = await Course.findById(courseId).populate('tags').populate('lessons').populate('refDocuments');
+
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course not found',
+                error: {
+                    code: 404,
+                    details: 'The requested course does not exist',
+                },
+            });
+        }
+
+        if (!course.creator) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course creator not found',
+                error: {
+                    code: 404,
+                    details: 'The course creator does not exist',
+                },
+            });
+        }
+
+        if (course.creator.toString() !== userId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Forbidden',
+                error: {
+                    code: 403,
+                    details: 'You do not have permission to access this course',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Course retrieved successfully',
+            data: course,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const getAllCourses = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const userId = req.user.id;
+
+        const courses = await Course.find({ creator: userId })
+            .populate('tags')
+            .populate('lessons')
+            .populate('refDocuments');
+
+        if (courses.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No courses found',
+                error: {
+                    code: 404,
+                    details: 'No courses found for this user',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Courses retrieved successfully',
+            data: courses,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
