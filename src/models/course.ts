@@ -11,6 +11,7 @@ const courseSchema = new mongoose.Schema({
     // customization: {},
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
+    status: { type: Boolean, default: false },
     // aiContent: { type: mongoose.Schema.Types.ObjectId, ref: 'aiContent' },
     // aiProcessed: { type: Boolean, default: false },
 });
