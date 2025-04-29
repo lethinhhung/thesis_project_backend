@@ -182,3 +182,50 @@ export const getAllLesson = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const updateLessonContent = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const lessonId = req.params.id;
+        const lesson = await Lesson.findById(lessonId);
+
+        if (!lesson) {
+            return res.status(200).json({
+                success: false,
+                message: 'Lesson not found',
+                error: {
+                    code: 404,
+                    details: 'The requested lesson does not exist',
+                },
+            });
+        }
+
+        const { content } = req.body;
+        lesson.content = content || lesson.content;
+        await lesson.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Lesson content updated successfully',
+            data: lesson,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
