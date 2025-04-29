@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const lessonSchema = new mongoose.Schema({
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'course' },
     title: String,
-    content: String,
+    content: { type: String, default: '' },
     refDocuments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
     aiGenerated: { type: Boolean, default: false },
     // customization: {

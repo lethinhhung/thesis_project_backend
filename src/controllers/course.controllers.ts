@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CreateCourse } from '../interfaces/course';
 import Course from '../models/course';
+import User from '../models/user';
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
@@ -18,6 +19,18 @@ export const createCourse = async (req: Request, res: Response) => {
         const userId = req.user.id;
         const { title, description, aiGenerated }: CreateCourse = req.body;
 
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
         if (!title || !description) {
             return res.status(200).json({
                 success: false,
@@ -32,9 +45,22 @@ export const createCourse = async (req: Request, res: Response) => {
         const course = await Course.create({
             title,
             description,
-            creator: userId,
             aiGenerated: aiGenerated || false,
         });
+
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course creation failed',
+                error: {
+                    code: 500,
+                    details: 'Failed to create course',
+                },
+            });
+        }
+
+        user.progress?.courses.push(course._id);
+        await user.save();
 
         return res.status(201).json({
             success: true,
@@ -80,27 +106,27 @@ export const getCourse = async (req: Request, res: Response) => {
             });
         }
 
-        if (!course.creator) {
-            return res.status(200).json({
-                success: false,
-                message: 'Course creator not found',
-                error: {
-                    code: 404,
-                    details: 'The course creator does not exist',
-                },
-            });
-        }
+        // if (!course.creator) {
+        //     return res.status(200).json({
+        //         success: false,
+        //         message: 'Course creator not found',
+        //         error: {
+        //             code: 404,
+        //             details: 'The course creator does not exist',
+        //         },
+        //     });
+        // }
 
-        if (course.creator.toString() !== userId) {
-            return res.status(200).json({
-                success: false,
-                message: 'Forbidden',
-                error: {
-                    code: 403,
-                    details: 'You do not have permission to access this course',
-                },
-            });
-        }
+        // if (course.creator.toString() !== userId) {
+        //     return res.status(200).json({
+        //         success: false,
+        //         message: 'Forbidden',
+        //         error: {
+        //             code: 403,
+        //             details: 'You do not have permission to access this course',
+        //         },
+        //     });
+        // }
 
         return res.status(200).json({
             success: true,
@@ -133,12 +159,19 @@ export const getAllCourses = async (req: Request, res: Response) => {
         }
         const userId = req.user.id;
 
-        const courses = await Course.find({ creator: userId })
-            .populate('tags')
-            .populate('lessons')
-            .populate('refDocuments');
+        const user = await User.findById(userId).populate('progress.courses');
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
 
-        if (courses.length === 0) {
+        if (user.progress?.courses.length === 0) {
             return res.status(200).json({
                 success: false,
                 message: 'No courses found',
@@ -152,7 +185,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: 'Courses retrieved successfully',
-            data: courses,
+            data: user.progress?.courses,
         });
     } catch (error: any) {
         return res.status(500).json({

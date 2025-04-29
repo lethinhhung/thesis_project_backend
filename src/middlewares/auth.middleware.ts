@@ -8,11 +8,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         // Lấy token từ header
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Authentication required',
                 error: {
-                    code: 'AUTH_REQUIRED',
+                    code: 401,
                     details: 'No authentication token provided',
                 },
             });
@@ -31,11 +31,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             // Kiểm tra user có tồn tại không
             const user = await User.findById(decoded.id);
             if (!user) {
-                return res.status(401).json({
+                return res.status(200).json({
                     success: false,
                     message: 'Authentication failed',
                     error: {
-                        code: 'USER_NOT_FOUND',
+                        code: 401,
                         details: 'User not found',
                     },
                 });
@@ -52,22 +52,22 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             next();
         } catch (error) {
             if (error instanceof jwt.TokenExpiredError) {
-                return res.status(401).json({
+                return res.status(200).json({
                     success: false,
                     message: 'Authentication failed',
                     error: {
-                        code: 'TOKEN_EXPIRED',
+                        code: 401,
                         details: 'Access token has expired',
                     },
                 });
             }
 
             if (error instanceof jwt.JsonWebTokenError) {
-                return res.status(401).json({
+                return res.status(200).json({
                     success: false,
                     message: 'Authentication failed',
                     error: {
-                        code: 'INVALID_TOKEN',
+                        code: 401,
                         details: 'Invalid token',
                     },
                 });
@@ -93,11 +93,11 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     if (req.user && req.user.role === 'admin') {
         next();
     } else {
-        return res.status(403).json({
+        return res.status(200).json({
             success: false,
             message: 'Access denied',
             error: {
-                code: 'FORBIDDEN',
+                code: 403,
                 details: 'Admin permission required',
             },
         });

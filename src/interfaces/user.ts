@@ -9,6 +9,24 @@ declare global {
                 username: string;
                 email: string;
                 role?: string;
+                // profile?: {
+                //     name: string;
+                //     avatar: string;
+                //     bio: string;
+                //     settings?: {
+                //         theme: string;
+                //         language: string;
+                //     };
+                // };
+                // progress?: {
+                //     courses: Types.ObjectId[];
+                //     lessons: Types.ObjectId[];
+                //     documents: Types.ObjectId[];
+                //     //                     pages: Types.ObjectId[];
+                //     //                     folders: Types.ObjectId[];
+                // };
+                // createdAt: Date;
+                // updatedAt: Date;
             };
         }
     }

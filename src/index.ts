@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import courseRoutes from './routes/course.routes';
+import lessonRoutes from './routes/lesson.routes';
 import uploadRoutes from './routes/upload.routes';
 import { connection } from './config/mongodb';
 import cors from 'cors';
@@ -30,6 +31,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/course', courseRoutes);
+app.use('/api/lesson', lessonRoutes);
 
 (async () => {
     try {

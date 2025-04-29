@@ -60,6 +60,17 @@ export const register = async (req: Request, res: Response) => {
             email: email,
         });
 
+        if (!newUser) {
+            return res.status(200).json({
+                success: false,
+                message: 'User creation failed',
+                error: {
+                    code: 500,
+                    details: 'Failed to create user',
+                },
+            });
+        }
+
         return res.status(201).json({
             success: true,
             message: 'User created successfully',
