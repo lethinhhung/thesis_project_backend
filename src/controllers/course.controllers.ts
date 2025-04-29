@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CreateCourse } from '../interfaces/course';
 import Course from '../models/course';
 import User from '../models/user';
+import Lesson from '../models/lesson';
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
@@ -93,6 +94,16 @@ export const getCourse = async (req: Request, res: Response) => {
         }
         const userId = req.user.id;
         const courseId = req.params.id;
+        if (!courseId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Course ID is required',
+                },
+            });
+        }
         const course = await Course.findById(courseId).populate('tags').populate('lessons').populate('refDocuments');
 
         if (!course) {
@@ -186,6 +197,72 @@ export const getAllCourses = async (req: Request, res: Response) => {
             success: true,
             message: 'Courses retrieved successfully',
             data: user.progress?.courses,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const deleteCourse = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const courseId = req.params.id;
+        if (!courseId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Course ID is required',
+                },
+            });
+        }
+        const course = await Course.findByIdAndDelete(courseId);
+
+        const lessons = await Lesson.find({ courseId });
+        const lessonIds = lessons.map((lesson) => lesson._id);
+        await Lesson.deleteMany({ courseId });
+        await User.updateMany(
+            {},
+            {
+                $pull: {
+                    'progress.courses': courseId,
+                    'progress.lessons': { $in: lessonIds },
+                },
+            },
+        );
+
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course not found',
+                error: {
+                    code: 404,
+                    details: 'The requested course does not exist',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Course deleted successfully',
+            data: course,
         });
     } catch (error: any) {
         return res.status(500).json({

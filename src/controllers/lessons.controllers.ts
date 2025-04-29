@@ -109,6 +109,17 @@ export const getLesson = async (req: Request, res: Response) => {
             });
         }
         const lessonId = req.params.id;
+        if (!lessonId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Lesson ID is required',
+                },
+            });
+        }
+
         const lesson = await Lesson.findById(lessonId);
 
         if (!lesson) {
@@ -216,6 +227,61 @@ export const updateLessonContent = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: 'Lesson content updated successfully',
+            data: lesson,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const deleteLesson = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const lessonId = req.params.id;
+        if (!lessonId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Lesson ID is required',
+                },
+            });
+        }
+        const lesson = await Lesson.findByIdAndDelete(lessonId);
+        await Course.updateMany({ lessons: lessonId }, { $pull: { lessons: lessonId } });
+        await User.updateMany({ 'progress.lessons': lessonId }, { $pull: { 'progress.lessons': lessonId } });
+
+        if (!lesson) {
+            return res.status(200).json({
+                success: false,
+                message: 'Lesson not found',
+                error: {
+                    code: 404,
+                    details: 'The requested lesson does not exist',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Lesson deleted successfully',
             data: lesson,
         });
     } catch (error: any) {
