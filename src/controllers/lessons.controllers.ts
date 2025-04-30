@@ -164,7 +164,14 @@ export const getAllLesson = async (req: Request, res: Response) => {
         }
 
         const courseId = req.params.courseId;
-        const course = await Course.findById(courseId).populate('lessons');
+        const course = await Course.findById(courseId).populate({
+            path: 'lessons',
+            select: '-content',
+            populate: {
+                path: 'courseId',
+                select: 'title',
+            },
+        });
 
         if (course?.lessons.length === 0) {
             return res.status(200).json({
@@ -222,6 +229,7 @@ export const updateLessonContent = async (req: Request, res: Response) => {
 
         const { content } = req.body;
         lesson.content = content || lesson.content;
+        lesson.updatedAt = new Date();
         await lesson.save();
 
         return res.status(200).json({
