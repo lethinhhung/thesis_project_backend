@@ -156,6 +156,109 @@ import Lesson from '../models/lesson';
 //     }
 // };
 
+export const getLimitCoursesAndLessons = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const userId = req.user.id;
+
+        const user = await User.findById(userId)
+            .select('progress') // Chỉ lấy trường progress
+            .lean(); // Tránh thêm overhead của Mongoose Document
+
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
+        if (user.progress?.courses.length === 0 && user.progress?.lessons.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No courses or lessons found',
+                error: {
+                    code: 404,
+                    details: 'No courses or lessons found for this user',
+                },
+            });
+        }
+
+        // Lấy ID các bài học và khóa học từ progress
+        const lessonIds = user.progress?.lessons || [];
+        const courseIds = user.progress?.courses || [];
+
+        // Lấy 6 bài học gần nhất
+        const recentLessons = await Lesson.find({ _id: { $in: lessonIds } })
+            .select('-content')
+            .populate('courseId', 'title')
+            .sort({ updatedAt: -1 })
+            .limit(6)
+            .lean();
+
+        // Lấy 6 khóa học status === true gần nhất
+        const activeCourses = await Course.find({
+            _id: { $in: courseIds },
+            status: true,
+        })
+            .sort({ updatedAt: -1 })
+            .limit(6)
+            .lean();
+
+        // Lấy 6 khóa học status === false gần nhất
+        const inactiveCourses = await Course.find({
+            _id: { $in: courseIds },
+            status: false,
+        })
+            .sort({ updatedAt: -1 })
+            .limit(6)
+            .lean();
+
+        const data = {
+            ...user.progress,
+            lessons: recentLessons,
+            courses: activeCourses.concat(inactiveCourses),
+        };
+        // const user = await User.findById(userId)
+        //     .populate('progress.courses')
+        //     .populate({
+        //         path: 'progress.lessons',
+        //         select: '-content',
+        //         populate: {
+        //             path: 'courseId',
+        //             select: 'title',
+        //         },
+        //     });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Courses and lessons retrieved successfully',
+            data: data,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
 export const getAllCoursesAndLessons = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
