@@ -170,7 +170,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
         }
         const userId = req.user.id;
 
-        const user = await User.findById(userId).populate('progress.courses');
+        const user = await User.findById(userId).select('progress.courses').populate('progress.courses').lean();
         if (!user) {
             return res.status(200).json({
                 success: false,
@@ -263,6 +263,128 @@ export const deleteCourse = async (req: Request, res: Response) => {
             success: true,
             message: 'Course deleted successfully',
             data: course,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const getOngoingCourses = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const userId = req.user.id;
+
+        const user = await User.findById(userId)
+            .select('progress.courses')
+            .populate({
+                path: 'progress.courses',
+                match: { status: false },
+            })
+            .lean();
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
+        if (user.progress?.courses.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No ongoing courses found',
+                error: {
+                    code: 404,
+                    details: 'No ongoing courses found for this user',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Courses retrieved successfully',
+            // data: user.progress?.courses,
+            data: user.progress?.courses,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const getCompletedCourses = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const userId = req.user.id;
+
+        const user = await User.findById(userId)
+            .select('progress.courses')
+            .populate({
+                path: 'progress.courses',
+                match: { status: true },
+            })
+            .lean();
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
+        if (user.progress?.courses.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No completed courses found',
+                error: {
+                    code: 404,
+                    details: 'No completed courses found for this user',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Courses retrieved successfully',
+            // data: user.progress?.courses,
+            data: user.progress?.courses,
         });
     } catch (error: any) {
         return res.status(500).json({
