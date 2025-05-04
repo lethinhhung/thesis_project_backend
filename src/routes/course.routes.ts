@@ -7,6 +7,7 @@ import {
     getCompletedCourses,
     getCourse,
     getOngoingCourses,
+    updateCourseStatus,
 } from '../controllers/course.controllers';
 
 const router = Router();
@@ -17,5 +18,6 @@ router.get('/get-all-courses', authenticate as any, getAllCourses as any);
 router.delete('/delete-course/:id', authenticate as any, deleteCourse as any);
 router.get('/get-ongoing-courses', authenticate as any, getOngoingCourses as any);
 router.get('/get-completed-courses', authenticate as any, getCompletedCourses as any);
+router.patch('/update-course-status/:id', authenticate as any, updateCourseStatus as any);
 
 export default router;
