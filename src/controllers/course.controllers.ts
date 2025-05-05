@@ -471,11 +471,17 @@ export const searchCourses = async (req: Request, res: Response) => {
         }
 
         const userId = req.user.id;
-        const { query, tags, status } = req.query;
+        const { query, tags, status, page, limit, sortBy = 'createdAt', order = 'desc' } = req.query;
 
+        console.log('Query:', query);
+        console.log('Tags:', tags);
+        console.log('Status:', status);
+        console.log('Page:', page);
+        console.log('Limit:', limit);
         // Build search criteria
         const searchCriteria: any = {};
 
+        // Tìm kiếm theo query
         if (query) {
             searchCriteria.$or = [
                 { title: { $regex: query, $options: 'i' } },
@@ -483,10 +489,10 @@ export const searchCourses = async (req: Request, res: Response) => {
             ];
         }
 
+        // Tìm kiếm theo tags
         if (typeof tags === 'string') {
             try {
                 const tagTitles = tags.split(',');
-                // Tìm các tag dựa trên title
                 const foundTags = await Tag.find({ title: { $in: tagTitles } });
                 if (foundTags.length > 0) {
                     const tagIds = foundTags.map((tag) => tag._id);
@@ -504,22 +510,33 @@ export const searchCourses = async (req: Request, res: Response) => {
             }
         }
 
+        // Tìm kiếm theo status
         if (status !== undefined) {
             searchCriteria.status = status === 'true';
         }
 
-        // Get user's courses
+        // Tính toán skip cho phân trang
+        const skip = (Number(page) - 1) * Number(limit);
+
+        // Get user's courses với phân trang và sorting
         const user = await User.findById(userId)
             .select('progress.courses')
             .populate({
                 path: 'progress.courses',
                 match: searchCriteria,
+                options: {
+                    sort: { [sortBy as string]: order === 'desc' ? -1 : 1 },
+                    skip: skip,
+                    limit: Number(limit),
+                },
                 populate: {
                     path: 'tags',
-                    select: 'title', // Chỉ lấy trường title của tag
+                    select: 'title',
                 },
-            })
-            .lean();
+            });
+
+        // Đếm tổng số kết quả để tính total pages
+        const total = await Course.countDocuments(searchCriteria);
 
         if (!user) {
             return res.status(200).json({
@@ -527,7 +544,7 @@ export const searchCourses = async (req: Request, res: Response) => {
                 message: 'User not found',
                 error: {
                     code: 404,
-                    details: 'The user does not exist',
+                    details: 'User not found in database',
                 },
             });
         }
@@ -535,7 +552,15 @@ export const searchCourses = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: 'Courses retrieved successfully',
-            data: user.progress?.courses || [],
+            data: {
+                courses: user.progress?.courses,
+                pagination: {
+                    total,
+                    page: Number(page),
+                    limit: Number(limit),
+                    totalPages: Math.ceil(total / Number(limit)),
+                },
+            },
         });
     } catch (error: any) {
         return res.status(500).json({
