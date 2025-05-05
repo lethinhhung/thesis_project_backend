@@ -5,6 +5,7 @@ import userRoutes from './routes/user.routes';
 import courseRoutes from './routes/course.routes';
 import lessonRoutes from './routes/lesson.routes';
 import dataRoutes from './routes/data.routes';
+import tagRoutes from './routes/tag.routes';
 import uploadRoutes from './routes/upload.routes';
 import { connection } from './config/mongodb';
 import cors from 'cors';
@@ -34,6 +35,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/course', courseRoutes);
 app.use('/api/lesson', lessonRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api/tag', tagRoutes);
 
 (async () => {
     try {

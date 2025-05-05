@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema({
         // pages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'page' }],
         // folders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'folder' }],
         documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
+        tags: [{ type: mongoose.Schema.Types.ObjectId, ref: 'tag' }],
     },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
