@@ -512,7 +512,7 @@ export const searchCourses = async (req: Request, res: Response) => {
                 const foundTags = await Tag.find({ title: { $in: tagTitles } });
                 if (foundTags.length > 0) {
                     const tagIds = foundTags.map((tag) => tag._id);
-                    searchCriteria.tags = { $in: tagIds };
+                    searchCriteria.tags = { $all: tagIds };
                 }
             } catch (error) {
                 return res.status(200).json({
