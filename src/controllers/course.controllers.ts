@@ -3,6 +3,8 @@ import { CreateCourse } from '../interfaces/course';
 import Course from '../models/course';
 import User from '../models/user';
 import Lesson from '../models/lesson';
+import Tag from '../models/tag';
+import mongoose from 'mongoose';
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
@@ -442,6 +444,98 @@ export const updateCourseStatus = async (req: Request, res: Response) => {
             success: true,
             message: 'Course status updated successfully',
             data: course,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const searchCourses = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
+        const userId = req.user.id;
+        const { query, tags, status } = req.query;
+
+        // Build search criteria
+        const searchCriteria: any = {};
+
+        if (query) {
+            searchCriteria.$or = [
+                { title: { $regex: query, $options: 'i' } },
+                { description: { $regex: query, $options: 'i' } },
+            ];
+        }
+
+        if (typeof tags === 'string') {
+            try {
+                const tagTitles = tags.split(',');
+                // Tìm các tag dựa trên title
+                const foundTags = await Tag.find({ title: { $in: tagTitles } });
+                if (foundTags.length > 0) {
+                    const tagIds = foundTags.map((tag) => tag._id);
+                    searchCriteria.tags = { $in: tagIds };
+                }
+            } catch (error) {
+                return res.status(200).json({
+                    success: false,
+                    message: 'Invalid tag titles',
+                    error: {
+                        code: 400,
+                        details: 'One or more tag titles are invalid',
+                    },
+                });
+            }
+        }
+
+        if (status !== undefined) {
+            searchCriteria.status = status === 'true';
+        }
+
+        // Get user's courses
+        const user = await User.findById(userId)
+            .select('progress.courses')
+            .populate({
+                path: 'progress.courses',
+                match: searchCriteria,
+                populate: {
+                    path: 'tags',
+                    select: 'title', // Chỉ lấy trường title của tag
+                },
+            })
+            .lean();
+
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Courses retrieved successfully',
+            data: user.progress?.courses || [],
         });
     } catch (error: any) {
         return res.status(500).json({
