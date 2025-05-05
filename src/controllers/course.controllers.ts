@@ -471,13 +471,29 @@ export const searchCourses = async (req: Request, res: Response) => {
         }
 
         const userId = req.user.id;
-        const { query, tags, status, page, limit, sortBy = 'createdAt', order = 'desc' } = req.query;
+        const { query, tags, status, page, limit, sortBy, order } = req.query;
+
+        let sortByField = 'createdAt'; // default sort field
+        if (sortBy) {
+            switch (sortBy) {
+                case 'title':
+                    sortByField = 'title';
+                    break;
+                case 'date':
+                    sortByField = 'createdAt';
+                    break;
+                default:
+                    sortByField = 'createdAt';
+            }
+        }
 
         console.log('Query:', query);
         console.log('Tags:', tags);
         console.log('Status:', status);
         console.log('Page:', page);
         console.log('Limit:', limit);
+        console.log('Sort By:', sortBy);
+        console.log('Order:', order);
         // Build search criteria
         const searchCriteria: any = {};
 
@@ -525,7 +541,7 @@ export const searchCourses = async (req: Request, res: Response) => {
                 path: 'progress.courses',
                 match: searchCriteria,
                 options: {
-                    sort: { [sortBy as string]: order === 'desc' ? -1 : 1 },
+                    sort: { [sortByField]: order === 'desc' ? -1 : 1 },
                     skip: skip,
                     limit: Number(limit),
                 },
