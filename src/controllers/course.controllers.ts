@@ -300,6 +300,10 @@ export const getOngoingCourses = async (req: Request, res: Response) => {
             .populate({
                 path: 'progress.courses',
                 match: { status: false },
+                populate: {
+                    path: 'tags',
+                    select: 'title',
+                },
             })
             .lean();
         if (!user) {
@@ -361,6 +365,10 @@ export const getCompletedCourses = async (req: Request, res: Response) => {
             .populate({
                 path: 'progress.courses',
                 match: { status: true },
+                populate: {
+                    path: 'tags',
+                    select: 'title',
+                },
             })
             .lean();
         if (!user) {
