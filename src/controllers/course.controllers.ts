@@ -652,11 +652,11 @@ export const updateCourseDetails = async (req: Request, res: Response) => {
         const course = await Course.findByIdAndUpdate(
             courseId,
             {
-                title,
-                description,
-                aiGenerated: aiGenerated || false,
-                customization: {
-                    emoji: emoji,
+                $set: {
+                    title,
+                    description,
+                    aiGenerated: aiGenerated || false,
+                    'customization.emoji': emoji,
                 },
             },
             { new: true },
