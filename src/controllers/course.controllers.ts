@@ -487,13 +487,6 @@ export const searchCourses = async (req: Request, res: Response) => {
             }
         }
 
-        console.log('Query:', query);
-        console.log('Tags:', tags);
-        console.log('Status:', status);
-        console.log('Page:', page);
-        console.log('Limit:', limit);
-        console.log('Sort By:', sortBy);
-        console.log('Order:', order);
         // Build search criteria
         const searchCriteria: any = {};
 

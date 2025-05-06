@@ -215,6 +215,7 @@ export const getLimitCoursesAndLessons = async (req: Request, res: Response) => 
         })
             .sort({ updatedAt: -1 })
             .limit(6)
+            .populate('tags')
             .lean();
 
         // Lấy 6 khóa học status === false gần nhất
@@ -224,6 +225,7 @@ export const getLimitCoursesAndLessons = async (req: Request, res: Response) => 
         })
             .sort({ updatedAt: -1 })
             .limit(6)
+            .populate('tags')
             .lean();
 
         const data = {
