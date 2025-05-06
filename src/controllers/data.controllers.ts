@@ -3,158 +3,8 @@ import { CreateCourse } from '../interfaces/course';
 import Course from '../models/course';
 import User from '../models/user';
 import Lesson from '../models/lesson';
-
-// export const createCourse = async (req: Request, res: Response) => {
-//     try {
-//         if (!req.user) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Unauthorized',
-//                 error: {
-//                     code: 401,
-//                     details: 'User not authenticated',
-//                 },
-//             });
-//         }
-
-//         const userId = req.user.id;
-//         const { title, description, aiGenerated }: CreateCourse = req.body;
-
-//         const user = await User.findById(userId);
-//         if (!user) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'User not found',
-//                 error: {
-//                     code: 404,
-//                     details: 'The user does not exist',
-//                 },
-//             });
-//         }
-
-//         if (!title || !description) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Invalid input',
-//                 error: {
-//                     code: 400,
-//                     details: 'Title and description are required',
-//                 },
-//             });
-//         }
-
-//         const course = await Course.create({
-//             title,
-//             description,
-//             aiGenerated: aiGenerated || false,
-//         });
-
-//         if (!course) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Course creation failed',
-//                 error: {
-//                     code: 500,
-//                     details: 'Failed to create course',
-//                 },
-//             });
-//         }
-
-//         user.progress?.courses.push(course._id);
-//         await user.save();
-
-//         return res.status(201).json({
-//             success: true,
-//             message: 'Course created successfully',
-//             data: course,
-//         });
-//     } catch (error: any) {
-//         return res.status(500).json({
-//             success: false,
-//             message: 'Internal server error',
-//             error: {
-//                 code: 'SERVER_ERROR',
-//                 details: error.message || 'An unexpected error occurred',
-//             },
-//         });
-//     }
-// };
-
-// export const getCourse = async (req: Request, res: Response) => {
-//     try {
-//         if (!req.user) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Unauthorized',
-//                 error: {
-//                     code: 401,
-//                     details: 'User not authenticated',
-//                 },
-//             });
-//         }
-//         const userId = req.user.id;
-//         const courseId = req.params.id;
-//         if (!courseId) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Invalid input',
-//                 error: {
-//                     code: 400,
-//                     details: 'Course ID is required',
-//                 },
-//             });
-//         }
-//         const course = await Course.findById(courseId).populate('tags').populate('lessons').populate('refDocuments');
-
-//         if (!course) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Course not found',
-//                 error: {
-//                     code: 404,
-//                     details: 'The requested course does not exist',
-//                 },
-//             });
-//         }
-
-//         // if (!course.creator) {
-//         //     return res.status(200).json({
-//         //         success: false,
-//         //         message: 'Course creator not found',
-//         //         error: {
-//         //             code: 404,
-//         //             details: 'The course creator does not exist',
-//         //         },
-//         //     });
-//         // }
-
-//         // if (course.creator.toString() !== userId) {
-//         //     return res.status(200).json({
-//         //         success: false,
-//         //         message: 'Forbidden',
-//         //         error: {
-//         //             code: 403,
-//         //             details: 'You do not have permission to access this course',
-//         //         },
-//         //     });
-//         // }
-
-//         return res.status(200).json({
-//             success: true,
-//             message: 'Course retrieved successfully',
-//             data: course,
-//         });
-//     } catch (error: any) {
-//         return res.status(500).json({
-//             success: false,
-//             message: 'Internal server error',
-//             error: {
-//                 code: 'SERVER_ERROR',
-//                 details: error.message || 'An unexpected error occurred',
-//             },
-//         });
-//     }
-// };
+import { uploadImage } from '../utils/upload';
+import Image from '../models/image';
 
 export const getLimitCoursesAndLessons = async (req: Request, res: Response) => {
     try {
@@ -400,68 +250,101 @@ export const searchAll = async (req: Request, res: Response) => {
     }
 };
 
-// export const deleteCourse = async (req: Request, res: Response) => {
-//     try {
-//         if (!req.user) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Unauthorized',
-//                 error: {
-//                     code: 401,
-//                     details: 'User not authenticated',
-//                 },
-//             });
-//         }
-//         const courseId = req.params.id;
-//         if (!courseId) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Invalid input',
-//                 error: {
-//                     code: 400,
-//                     details: 'Course ID is required',
-//                 },
-//             });
-//         }
-//         const course = await Course.findByIdAndDelete(courseId);
+export const uploadImageController = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
 
-//         const lessons = await Lesson.find({ courseId });
-//         const lessonIds = lessons.map((lesson) => lesson._id);
-//         await Lesson.deleteMany({ courseId });
-//         await User.updateMany(
-//             {},
-//             {
-//                 $pull: {
-//                     'progress.courses': courseId,
-//                     'progress.lessons': { $in: lessonIds },
-//                 },
-//             },
-//         );
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (req.file && !allowedTypes.includes(req.file.mimetype)) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid file type',
+                error: {
+                    code: 400,
+                    details: 'Only JPEG, JPG and PNG formats are supported',
+                },
+            });
+        }
 
-//         if (!course) {
-//             return res.status(200).json({
-//                 success: false,
-//                 message: 'Course not found',
-//                 error: {
-//                     code: 404,
-//                     details: 'The requested course does not exist',
-//                 },
-//             });
-//         }
+        if (!req.file) {
+            return res.status(200).json({
+                success: false,
+                message: 'No file uploaded',
+                error: {
+                    code: 400,
+                    details: 'File is required',
+                },
+            });
+        }
 
-//         return res.status(200).json({
-//             success: true,
-//             message: 'Course deleted successfully',
-//             data: course,
-//         });
-//     } catch (error: any) {
-//         return res.status(500).json({
-//             success: false,
-//             message: 'Internal server error',
-//             error: {
-//                 code: 'SERVER_ERROR',
-//                 details: error.message || 'An unexpected error occurred',
-//             },
-//         });
-//     }
-// };
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: `No user found with ID ${req.user.id}`,
+                },
+            });
+        }
+
+        if (req.file) {
+            const uploaded = await uploadImage(user._id.toString(), req.file);
+            if (!uploaded) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Image upload failed',
+                    error: {
+                        code: 'UPLOAD_FAILED',
+                        details: 'An error occurred while uploading the image',
+                    },
+                });
+            }
+
+            const image = await Image.create({
+                filename: uploaded.fileName,
+                url: uploaded.url,
+                userId: user._id,
+            });
+
+            if (!image) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Image creation failed',
+                    error: {
+                        code: 'IMAGE_CREATION_FAILED',
+                        details: 'An error occurred while creating the image record',
+                    },
+                });
+            }
+
+            user.progress?.images.push(image._id);
+            await user.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Image uploaded successfully',
+                data: image,
+            });
+        }
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};

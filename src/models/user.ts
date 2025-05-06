@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
         // folders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'folder' }],
         documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
         tags: [{ type: mongoose.Schema.Types.ObjectId, ref: 'tag' }],
+        images: [{ type: mongoose.Schema.Types.ObjectId, ref: 'image' }],
     },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

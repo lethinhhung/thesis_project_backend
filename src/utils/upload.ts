@@ -48,3 +48,34 @@ export const deleteAvatar = async (userId: string, path: string) => {
         throw error;
     }
 };
+
+export const uploadImage = async (userId: string, file: Express.Multer.File) => {
+    try {
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `${userId}/${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from(process.env.SUPABASE_IMAGES_BUCKET_NAME!)
+            .upload(filePath, file.buffer, {
+                contentType: file.mimetype,
+                upsert: false,
+            });
+
+        if (error) {
+            throw error;
+        }
+
+        const { data: publicUrl } = supabase.storage
+            .from(process.env.SUPABASE_IMAGES_BUCKET_NAME!)
+            .getPublicUrl(filePath);
+
+        return {
+            fileName: fileName,
+            url: publicUrl.publicUrl,
+            path: filePath,
+        };
+    } catch (error) {
+        throw error;
+    }
+};
