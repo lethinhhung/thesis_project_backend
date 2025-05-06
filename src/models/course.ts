@@ -16,6 +16,11 @@ const courseSchema = new mongoose.Schema({
     aiGenerated: { type: Boolean, default: false },
     lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lesson' }],
     refDocuments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
+    customization: {
+        emoji: { type: String, default: '📚' },
+        color: { type: String, default: '#000000' },
+        cover: { type: String, default: '' },
+    },
     createdAt: {
         type: Date,
         default: Date.now,
