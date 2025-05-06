@@ -593,3 +593,84 @@ export const searchCourses = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const updateCourseDetails = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
+        const userId = req.user.id;
+        const { title, description, aiGenerated, emoji }: CreateCourse = req.body;
+        const courseId = req.params.id;
+
+        if (!courseId || !title || !description) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Course ID, title and description are required',
+                },
+            });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
+        const course = await Course.findByIdAndUpdate(
+            courseId,
+            {
+                title,
+                description,
+                aiGenerated: aiGenerated || false,
+                customization: {
+                    emoji: emoji,
+                },
+            },
+            { new: true },
+        );
+
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course update failed',
+                error: {
+                    code: 500,
+                    details: 'Failed to update course',
+                },
+            });
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: 'Course updated successfully',
+            data: course,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
