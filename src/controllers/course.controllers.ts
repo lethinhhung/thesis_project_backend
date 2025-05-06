@@ -265,6 +265,20 @@ export const deleteCourse = async (req: Request, res: Response) => {
             });
         }
 
+        if (course.customization?.cover) {
+            const deleted = await deleteImage(req.user.id.toString(), course.customization.cover);
+            if (!deleted) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to delete old cover',
+                    error: {
+                        code: 'DELETE_IMAGE_FAILED',
+                        details: 'An error occurred while deleting the old cover image',
+                    },
+                });
+            }
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Course deleted successfully',
