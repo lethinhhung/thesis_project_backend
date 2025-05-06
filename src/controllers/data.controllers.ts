@@ -325,6 +325,81 @@ export const getAllCoursesAndLessons = async (req: Request, res: Response) => {
     }
 };
 
+export const searchAll = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
+        const userId = req.user.id;
+        const { query } = req.query;
+
+        if (!query) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Search query is required',
+                },
+            });
+        }
+
+        // Get user's courses and lessons
+        const user = await User.findById(userId).select('progress');
+
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
+        // Search courses
+        const courses = await Course.find({
+            _id: { $in: user.progress?.courses },
+            $or: [{ title: { $regex: query, $options: 'i' } }, { description: { $regex: query, $options: 'i' } }],
+        }).populate('tags');
+
+        // Search lessons
+        const lessons = await Lesson.find({
+            _id: { $in: user.progress?.lessons },
+            $or: [{ title: { $regex: query, $options: 'i' } }, { description: { $regex: query, $options: 'i' } }],
+        })
+            .select('-content')
+            .populate('courseId', 'title');
+
+        return res.status(200).json({
+            success: true,
+            message: 'Search completed successfully',
+            data: {
+                courses,
+                lessons,
+            },
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
 // export const deleteCourse = async (req: Request, res: Response) => {
 //     try {
 //         if (!req.user) {
