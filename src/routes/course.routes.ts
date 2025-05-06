@@ -8,9 +8,11 @@ import {
     getCourse,
     getOngoingCourses,
     searchCourses,
+    updateCourseCover,
     updateCourseDetails,
     updateCourseStatus,
 } from '../controllers/course.controllers';
+import { upload } from '../config/multer';
 
 const router = Router();
 
@@ -23,5 +25,6 @@ router.get('/get-completed-courses', authenticate as any, getCompletedCourses as
 router.patch('/update-course-status/:id', authenticate as any, updateCourseStatus as any);
 router.get('/search-courses', authenticate as any, searchCourses as any);
 router.patch('/update-course-details/:id', authenticate as any, updateCourseDetails as any);
+router.patch('/update-course-cover/:id', authenticate as any, upload.single('image'), updateCourseCover as any);
 
 export default router;

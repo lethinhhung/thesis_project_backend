@@ -5,6 +5,7 @@ import User from '../models/user';
 import Lesson from '../models/lesson';
 import Tag from '../models/tag';
 import mongoose from 'mongoose';
+import { deleteImage, uploadImage } from '../utils/upload';
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
@@ -661,6 +662,116 @@ export const updateCourseDetails = async (req: Request, res: Response) => {
         return res.status(201).json({
             success: true,
             message: 'Course updated successfully',
+            data: course,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const updateCourseCover = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (req.file && !allowedTypes.includes(req.file.mimetype)) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid file type',
+                error: {
+                    code: 400,
+                    details: 'Only JPEG, JPG and PNG formats are supported',
+                },
+            });
+        }
+
+        if (!req.file) {
+            return res.status(200).json({
+                success: false,
+                message: 'No file uploaded',
+                error: {
+                    code: 400,
+                    details: 'File upload is required',
+                },
+            });
+        }
+
+        const courseId = req.params.id;
+        if (!courseId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Invalid input',
+                error: {
+                    code: 400,
+                    details: 'Course ID is required',
+                },
+            });
+        }
+
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course not found',
+                error: {
+                    code: 404,
+                    details: 'The requested course does not exist',
+                },
+            });
+        }
+
+        if (req.file && course.customization?.cover) {
+            const deleted = await deleteImage(req.user.id.toString(), course.customization.cover);
+            if (!deleted) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to delete old cover',
+                    error: {
+                        code: 'DELETE_IMAGE_FAILED',
+                        details: 'An error occurred while deleting the old cover image',
+                    },
+                });
+            }
+        }
+
+        if (req.file) {
+            const uploaded = await uploadImage(req.user.id.toString(), req.file);
+            if (!uploaded) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Image upload failed',
+                    error: {
+                        code: 'UPLOAD_FAILED',
+                        details: 'An error occurred while uploading the image cover',
+                    },
+                });
+            }
+            if (course.customization) {
+                course.customization.cover = uploaded.url;
+            }
+
+            await course.save();
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Course cover updated successfully',
             data: course,
         });
     } catch (error: any) {

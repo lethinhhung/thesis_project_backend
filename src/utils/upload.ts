@@ -79,3 +79,21 @@ export const uploadImage = async (userId: string, file: Express.Multer.File) => 
         throw error;
     }
 };
+
+export const deleteImage = async (userId: string, path: string) => {
+    try {
+        const fileName = path.split('/').pop();
+        console.log('fileName', fileName);
+        const { error } = await supabase.storage
+            .from(process.env.SUPABASE_IMAGES_BUCKET_NAME!)
+            .remove([`${userId}/${fileName}`]);
+
+        if (error) {
+            throw error;
+        }
+
+        return true;
+    } catch (error) {
+        throw error;
+    }
+};
