@@ -1,6 +1,6 @@
-# E-Learning Platform Backend (Ongoing)
+# AI-Powered Study Assistant Platform (Ongoing)
 
-Backend API for the e-learning platform, built with Express.js and MongoDB.
+Backend API for personalized learning support platform with AI integration that helps students manage notes, track study progress, and generate quizzes or tests based on uploaded documents.
 
 ## Technologies Used
 
