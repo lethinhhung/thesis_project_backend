@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Document from '../models/document';
+import User from '../models/user';
 import { deleteImage, uploadDocument, uploadImage } from '../utils/upload';
 
 export const createDocument = async (req: Request, res: Response) => {
@@ -16,6 +17,18 @@ export const createDocument = async (req: Request, res: Response) => {
         }
 
         const userId = req.user.id.toString();
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'User not found',
+                },
+            });
+        }
 
         // Document type validation
         const allowedTypes = [
@@ -94,10 +107,73 @@ export const createDocument = async (req: Request, res: Response) => {
             });
         }
 
+        user.progress?.documents.push(document._id);
+        await user.save();
+
         return res.status(200).json({
             success: true,
-            message: 'Course cover updated successfully',
+            message: 'Document created successfully',
             data: document,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const getAllDocuments = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const userId = req.user.id;
+
+        const user = await User.findById(userId).populate({
+            path: 'progress.documents',
+            populate: {
+                path: 'tags',
+                select: 'title',
+            },
+        });
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: 'The user does not exist',
+                },
+            });
+        }
+
+        if (user.progress?.documents.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No documents found',
+                error: {
+                    code: 404,
+                    details: 'No documents found for this user',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Documents retrieved successfully',
+            data: user.progress?.documents,
         });
     } catch (error: any) {
         return res.status(500).json({
