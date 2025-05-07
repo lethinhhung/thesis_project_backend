@@ -6,6 +6,7 @@ import courseRoutes from './routes/course.routes';
 import lessonRoutes from './routes/lesson.routes';
 import dataRoutes from './routes/data.routes';
 import tagRoutes from './routes/tag.routes';
+import documentRoutes from './routes/document.routes';
 import uploadRoutes from './routes/upload.routes';
 import { connection } from './config/mongodb';
 import cors from 'cors';
@@ -15,6 +16,7 @@ import './models/course';
 import './models/document';
 import './models/lesson';
 import './models/tag';
+import './models/document';
 
 dotenv.config();
 
@@ -36,6 +38,7 @@ app.use('/api/course', courseRoutes);
 app.use('/api/lesson', lessonRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/tag', tagRoutes);
+app.use('/api/document', documentRoutes);
 
 (async () => {
     try {

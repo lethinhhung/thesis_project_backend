@@ -58,6 +58,7 @@ export const createLesson = async (req: Request, res: Response) => {
         }
 
         const lesson = await Lesson.create({
+            userId,
             courseId,
             title,
             aiGenerated: aiGenerated || false,

@@ -23,6 +23,7 @@ export const uploadAvatar = async (userId: string, file: Express.Multer.File) =>
             .getPublicUrl(filePath);
 
         return {
+            fileName: fileName,
             url: publicUrl.publicUrl,
             path: filePath,
         };
@@ -93,6 +94,37 @@ export const deleteImage = async (userId: string, path: string) => {
         }
 
         return true;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const uploadDocument = async (userId: string, file: Express.Multer.File) => {
+    try {
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `${userId}/${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from(process.env.SUPABASE_DOCUMENTS_BUCKET_NAME!)
+            .upload(filePath, file.buffer, {
+                contentType: file.mimetype,
+                upsert: false,
+            });
+
+        if (error) {
+            throw error;
+        }
+
+        const { data: publicUrl } = supabase.storage
+            .from(process.env.SUPABASE_DOCUMENTS_BUCKET_NAME!)
+            .getPublicUrl(filePath);
+
+        return {
+            fileName: fileName,
+            url: publicUrl.publicUrl,
+            path: filePath,
+        };
     } catch (error) {
         throw error;
     }

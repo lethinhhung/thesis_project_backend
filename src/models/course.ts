@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const courseSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
     title: {
         type: String,
         index: true, // Thêm index để tối ưu tìm kiếm

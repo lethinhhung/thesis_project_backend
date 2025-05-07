@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const lessonSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'course' },
     title: String,
     content: { type: String, default: '' },
