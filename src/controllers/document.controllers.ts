@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import Document from '../models/document';
 import User from '../models/user';
 import { deleteImage, uploadDocument, uploadImage } from '../utils/upload';
-import { downloadDocumentUtils } from '../utils/download';
+import { downloadDocument as downloadDocumentUtils } from '../utils/download';
+import { deleteDocument as deleteDocumentUtils } from '../utils/upload';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -276,6 +277,83 @@ export const downloadDocument = async (req: Request, res: Response) => {
 
         // Send file
         return res.end(Buffer.from(data));
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const deleteDocument = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
+        const documentId = req.params.id;
+        if (!documentId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Document ID is required',
+                error: {
+                    code: 400,
+                    details: 'Document ID is required',
+                },
+            });
+        }
+
+        // Tìm document trong database
+        const document = await Document.findById(documentId);
+        if (!document) {
+            return res.status(200).json({
+                success: false,
+                message: 'Document not found',
+                error: {
+                    code: 404,
+                    details: 'Document not found',
+                },
+            });
+        }
+
+        // Xóa file từ storage
+        const filePath = document.fileUrl?.split('/').pop();
+        if (filePath) {
+            const deleted = await deleteDocumentUtils(req.user.id.toString(), filePath);
+            if (!deleted) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to delete document file',
+                    error: {
+                        code: 'DELETE_FILE_FAILED',
+                        details: 'An error occurred while deleting the document file',
+                    },
+                });
+            }
+        }
+
+        // Xóa document từ database
+        await Document.findByIdAndDelete(documentId);
+
+        // Xóa document ID từ user's progress
+        await User.updateOne({ _id: req.user.id }, { $pull: { 'progress.documents': documentId } });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Document deleted successfully',
+            data: document,
+        });
     } catch (error: any) {
         return res.status(500).json({
             success: false,

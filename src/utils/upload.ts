@@ -129,3 +129,19 @@ export const uploadDocument = async (userId: string, file: Express.Multer.File) 
         throw error;
     }
 };
+
+export const deleteDocument = async (userId: string, path: string) => {
+    try {
+        const { error } = await supabase.storage
+            .from(process.env.SUPABASE_DOCUMENTS_BUCKET_NAME!)
+            .remove([`${userId}/${path}`]);
+
+        if (error) {
+            throw error;
+        }
+
+        return true;
+    } catch (error) {
+        return false;
+    }
+};

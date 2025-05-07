@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase';
 
-export const downloadDocumentUtils = async (userId: string, filePath: string) => {
+export const downloadDocument = async (userId: string, filePath: string) => {
     try {
         // Download file from Supabase
         const { data, error } = await supabase.storage
