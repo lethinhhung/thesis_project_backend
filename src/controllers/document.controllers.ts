@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Document from '../models/document';
 import User from '../models/user';
 import { deleteImage, uploadDocument, uploadImage } from '../utils/upload';
+import { downloadDocumentUtils } from '../utils/download';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -175,6 +176,106 @@ export const getAllDocuments = async (req: Request, res: Response) => {
             message: 'Documents retrieved successfully',
             data: user.progress?.documents,
         });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+export const downloadDocument = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
+        const documentId = req.params.id;
+        if (!documentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Document ID is required',
+                error: {
+                    code: 400,
+                    details: 'Document ID is required',
+                },
+            });
+        }
+
+        // Tìm document trong database
+        const document = await Document.findById(documentId);
+        if (!document || !document.fileUrl) {
+            return res.status(404).json({
+                success: false,
+                message: 'Document not found',
+                error: {
+                    code: 404,
+                    details: 'Document not found',
+                },
+            });
+        }
+
+        // Extract filename from URL
+        const filePath = document.fileUrl.split('/').pop();
+        if (!filePath) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid file path',
+                error: {
+                    code: 400,
+                    details: 'Could not extract file path from URL',
+                },
+            });
+        }
+
+        // Tải file từ Supabase
+        const { data, error } = await downloadDocumentUtils(req.user.id.toString(), filePath);
+
+        if (error || !data) {
+            return res.status(500).json({
+                success: false,
+                message: 'Download failed',
+                error: {
+                    code: 500,
+                    details: error || 'An error occurred while downloading the document',
+                },
+            });
+        }
+
+        // Get file extension and set correct MIME type
+        const fileExt = filePath.split('.').pop()?.toLowerCase();
+        const mimeTypes: Record<string, string> = {
+            pdf: 'application/pdf',
+            doc: 'application/msword',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            xls: 'application/vnd.ms-excel',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ppt: 'application/vnd.ms-powerpoint',
+            pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            txt: 'text/plain',
+            md: 'text/markdown',
+            rtf: 'application/rtf',
+        };
+
+        // Set headers
+        const contentType = fileExt ? mimeTypes[fileExt] || 'application/octet-stream' : 'application/octet-stream';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${filePath}"`);
+        res.setHeader('Content-Length', Buffer.byteLength(data));
+
+        // Send file
+        return res.end(Buffer.from(data));
     } catch (error: any) {
         return res.status(500).json({
             success: false,
