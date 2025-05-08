@@ -3,6 +3,7 @@ import { CreateCourse } from '../interfaces/course';
 import Course from '../models/course';
 import User from '../models/user';
 import Lesson from '../models/lesson';
+import Document from '../models/document';
 import { uploadImage } from '../utils/upload';
 import Image from '../models/image';
 
@@ -230,12 +231,19 @@ export const searchAll = async (req: Request, res: Response) => {
             .select('-content')
             .populate('courseId', 'title');
 
+        // Search documents
+        const documents = await Document.find({
+            _id: { $in: user.progress?.documents },
+            $or: [{ title: { $regex: query, $options: 'i' } }],
+        }).populate('tags');
+
         return res.status(200).json({
             success: true,
             message: 'Search completed successfully',
             data: {
                 courses,
                 lessons,
+                documents,
             },
         });
     } catch (error: any) {
