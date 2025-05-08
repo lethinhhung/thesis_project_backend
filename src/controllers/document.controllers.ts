@@ -96,6 +96,8 @@ export const createDocument = async (req: Request, res: Response) => {
             userId,
             title,
             fileUrl: uploaded.url,
+            status: 'processing',
+            size: req.file.size,
         });
 
         if (!document) {
