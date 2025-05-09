@@ -6,6 +6,7 @@ import { downloadDocument as downloadDocumentUtils } from '../utils/download';
 import { deleteDocument as deleteDocumentUtils } from '../utils/upload';
 import mongoose from 'mongoose';
 import Course from '../models/course';
+import Lesson from '../models/lesson';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -133,7 +134,7 @@ export const createDocument = async (req: Request, res: Response) => {
         }
 
         if (lessonId) {
-            const lesson = await Course.findById(lessonId);
+            const lesson = await Lesson.findById(lessonId);
             if (!lesson) {
                 return res.status(200).json({
                     success: false,

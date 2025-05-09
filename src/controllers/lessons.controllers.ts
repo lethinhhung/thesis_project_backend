@@ -121,7 +121,15 @@ export const getLesson = async (req: Request, res: Response) => {
             });
         }
 
-        const lesson = await Lesson.findById(lessonId);
+        const lesson = await Lesson.findById(lessonId).populate([
+            {
+                path: 'courseId',
+                select: 'title',
+            },
+            {
+                path: 'refDocuments',
+            },
+        ]);
 
         if (!lesson) {
             return res.status(200).json({
