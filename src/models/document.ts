@@ -15,8 +15,8 @@ const documentSchema = new mongoose.Schema({
         },
     ],
     status: { type: String, enum: ['processing', 'completed', 'failed'], default: 'pending', index: true },
-    courseId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'course' }],
-    lessonId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lesson' }],
+    courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'course' }],
+    lessons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lesson' }],
     size: Number,
     // customization: {},
     createdAt: {

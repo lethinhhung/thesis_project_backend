@@ -4,6 +4,8 @@ import User from '../models/user';
 import { deleteImage, uploadDocument, uploadImage } from '../utils/upload';
 import { downloadDocument as downloadDocumentUtils } from '../utils/download';
 import { deleteDocument as deleteDocumentUtils } from '../utils/upload';
+import mongoose from 'mongoose';
+import Course from '../models/course';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -68,7 +70,7 @@ export const createDocument = async (req: Request, res: Response) => {
             });
         }
 
-        const { title } = req.body;
+        const { title, courseId, lessonId } = req.body;
         if (!title) {
             return res.status(200).json({
                 success: false,
@@ -95,6 +97,8 @@ export const createDocument = async (req: Request, res: Response) => {
         const document = await Document.create({
             userId,
             title,
+            courses: courseId ? [new mongoose.Types.ObjectId(courseId as string)] : [],
+            lessons: lessonId ? [new mongoose.Types.ObjectId(lessonId as string)] : [],
             fileUrl: uploaded.url,
             status: 'processing',
             size: req.file.size,
@@ -111,12 +115,50 @@ export const createDocument = async (req: Request, res: Response) => {
             });
         }
 
+        if (courseId) {
+            const course = await Course.findById(courseId);
+            if (!course) {
+                return res.status(200).json({
+                    success: false,
+                    message: 'Course not found',
+                    error: {
+                        code: 404,
+                        details: 'Course not found',
+                    },
+                });
+            }
+
+            course.refDocuments.push(document._id);
+            await course.save();
+        }
+
+        if (lessonId) {
+            const lesson = await Course.findById(lessonId);
+            if (!lesson) {
+                return res.status(200).json({
+                    success: false,
+                    message: 'Lesson not found',
+                    error: {
+                        code: 404,
+                        details: 'Lesson not found',
+                    },
+                });
+            }
+            lesson.refDocuments.push(document._id);
+            await lesson.save();
+        }
+
         user.progress?.documents.push(document._id);
         await user.save();
 
         return res.status(200).json({
             success: true,
-            message: 'Document created successfully',
+            message:
+                courseId && lessonId
+                    ? 'Document added successfully to lesson and course'
+                    : courseId && !lessonId
+                    ? 'Document added successfully to course'
+                    : 'Document created successfully',
             data: document,
         });
     } catch (error: any) {
@@ -347,6 +389,17 @@ export const deleteDocument = async (req: Request, res: Response) => {
 
         // Xóa document từ database
         await Document.findByIdAndDelete(documentId);
+
+        // Xóa document ID từ course
+        if (document.courses && document.courses.length > 0) {
+            await Course.updateMany({ _id: { $in: document.courses } }, { $pull: { refDocuments: document._id } });
+        }
+
+        // Xóa document ID từ lesson
+
+        if (document.lessons && document.lessons.length > 0) {
+            await Course.updateMany({ _id: { $in: document.lessons } }, { $pull: { refDocuments: document._id } });
+        }
 
         // Xóa document ID từ user's progress
         await User.updateOne({ _id: req.user.id }, { $pull: { 'progress.documents': documentId } });
