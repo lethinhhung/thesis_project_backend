@@ -312,3 +312,51 @@ export const deleteLesson = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const updateLesson = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const lessonId = req.params.id;
+        const lesson = await Lesson.findById(lessonId);
+
+        if (!lesson) {
+            return res.status(200).json({
+                success: false,
+                message: 'Lesson not found',
+                error: {
+                    code: 404,
+                    details: 'The requested lesson does not exist',
+                },
+            });
+        }
+
+        const { title } = req.body;
+        lesson.title = title || lesson.title;
+        lesson.updatedAt = new Date();
+        await lesson.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Lesson updated successfully',
+            data: lesson,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
