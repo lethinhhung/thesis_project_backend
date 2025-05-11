@@ -7,6 +7,7 @@ import { deleteDocument as deleteDocumentUtils } from '../utils/upload';
 import mongoose from 'mongoose';
 import Course from '../models/course';
 import Lesson from '../models/lesson';
+import PdfParse from 'pdf-parse';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -70,6 +71,11 @@ export const createDocument = async (req: Request, res: Response) => {
                 },
             });
         }
+
+        // if (req.file.buffer) {
+        //     const data = await PdfParse(req.file.buffer);
+        //     console.log('PDF Metadata:', data);
+        // }
 
         const { title, courseId, lessonId } = req.body;
         if (!title) {
