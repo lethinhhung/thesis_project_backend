@@ -21,7 +21,7 @@ export const createCourse = async (req: Request, res: Response) => {
         }
 
         const userId = req.user.id;
-        const { title, description, aiGenerated, emoji }: CreateCourse = req.body;
+        const { title, description, aiGenerated, emoji, tags }: CreateCourse = req.body;
 
         const user = await User.findById(userId);
         if (!user) {
@@ -49,6 +49,7 @@ export const createCourse = async (req: Request, res: Response) => {
         const course = await Course.create({
             userId,
             title,
+            tags: tags ? tags.map((tag: string) => new mongoose.Types.ObjectId(tag)) : [],
             description,
             aiGenerated: aiGenerated || false,
             customization: {

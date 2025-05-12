@@ -3,4 +3,5 @@ export interface CreateCourse {
     description: string;
     aiGenerated?: boolean;
     emoji?: string;
+    tags?: string[];
 }
