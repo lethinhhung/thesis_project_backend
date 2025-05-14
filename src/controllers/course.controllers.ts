@@ -6,6 +6,8 @@ import Lesson from '../models/lesson';
 import Tag from '../models/tag';
 import mongoose from 'mongoose';
 import { deleteImage, uploadImage } from '../utils/upload';
+import Test from '../models/test';
+import Project from '../models/project';
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
@@ -243,15 +245,37 @@ export const deleteCourse = async (req: Request, res: Response) => {
         }
         const course = await Course.findByIdAndDelete(courseId);
 
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course not found',
+                error: {
+                    code: 404,
+                    details: 'The requested course does not exist',
+                },
+            });
+        }
+
+        const tests = await Test.find({ courseId });
+        const testIds = tests.map((test) => test._id);
+        await Test.deleteMany({ courseId });
+
+        const projects = await Project.find({ courseId });
+        const projectIds = projects.map((project) => project._id);
+        await Project.deleteMany({ courseId });
+
         const lessons = await Lesson.find({ courseId });
         const lessonIds = lessons.map((lesson) => lesson._id);
         await Lesson.deleteMany({ courseId });
+
         await User.updateMany(
             {},
             {
                 $pull: {
                     'progress.courses': courseId,
                     'progress.lessons': { $in: lessonIds },
+                    'progress.tests': { $in: testIds },
+                    'progress.projects': { $in: projectIds },
                 },
             },
         );

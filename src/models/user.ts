@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema({
         documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
         tags: [{ type: mongoose.Schema.Types.ObjectId, ref: 'tag' }],
         images: [{ type: mongoose.Schema.Types.ObjectId, ref: 'image' }],
+        tests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'test' }],
+        projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'project' }],
     },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

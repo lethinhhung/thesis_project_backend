@@ -136,6 +136,7 @@ export const createDocument = async (req: Request, res: Response) => {
             }
 
             course.refDocuments.push(document._id);
+            course.updatedAt = new Date();
             await course.save();
         }
 
@@ -400,12 +401,14 @@ export const deleteDocument = async (req: Request, res: Response) => {
         // Xóa document ID từ course
         if (document.courses && document.courses.length > 0) {
             await Course.updateMany({ _id: { $in: document.courses } }, { $pull: { refDocuments: document._id } });
+            await Course.updateMany({ _id: { $in: document.courses } }, { updatedAt: new Date() });
         }
 
         // Xóa document ID từ lesson
 
         if (document.lessons && document.lessons.length > 0) {
-            await Course.updateMany({ _id: { $in: document.lessons } }, { $pull: { refDocuments: document._id } });
+            await Lesson.updateMany({ _id: { $in: document.lessons } }, { $pull: { refDocuments: document._id } });
+            await Lesson.updateMany({ _id: { $in: document.lessons } }, { updatedAt: new Date() });
         }
 
         // Xóa document ID từ user's progress

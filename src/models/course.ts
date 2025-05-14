@@ -25,6 +25,10 @@ const courseSchema = new mongoose.Schema({
         color: { type: String, default: '#000000' },
         cover: { type: String, default: '' },
     },
+    progress: {
+        tests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'test' }],
+        projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'project' }],
+    },
     createdAt: {
         type: Date,
         default: Date.now,
