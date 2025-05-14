@@ -40,15 +40,39 @@ cp .env.example .env
 ```
 
 4. Update environment variables in `.env`
+Create a `.env` file in the root directory with the following variables:
 
-5. Start development server
+```env
+# Server Configuration
+PORT=8080
+NODE_ENV=development
+
+# MongoDB Database
+MONGO_DB_URL=mongodb+srv://your_username:your_password@mongodb_url/?retryWrites=true&w=majority&appName=Main
+
+# Authentication
+JWT_SECRET=your_jwt_secret
+
+# Storage Configuration
+SUPABASE_URL=hyour_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_key
+SUPABASE_LESSONS_BUCKET_NAME=lessons_bucket_name
+SUPABASE_AVATARS_BUCKET_NAME=avatars_bucket_name
+SUPABASE_IMAGES_BUCKET_NAME=images_bucket_name
+SUPABASE_DOCUMENTS_BUCKET_NAME=documents_bucket_name
+
+# Optional: External Services
+(Under development)
+```
+
+6. Start development server
 ```bash
 npm run dev
 # or
 yarn dev
 ```
 
-Server will run on [http://localhost:5000](http://localhost:5000)
+Server will run on [http://localhost:8080](http://localhost:8080)
 
 ## Project Structure
 
