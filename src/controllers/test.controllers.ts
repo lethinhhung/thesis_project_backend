@@ -257,12 +257,32 @@ export const getCourseTests = async (req: Request, res: Response) => {
         }
         const { courseId } = req.params;
 
-        const tests = await Test.find({ courseId }).sort({ date: -1 });
+        if (!courseId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Missing required fields',
+                error: {
+                    code: 400,
+                    details: 'Course ID is required',
+                },
+            });
+        }
+        const course = await Course.findById(courseId).populate('progress.tests');
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course not found',
+                error: {
+                    code: 404,
+                    details: 'Course not found',
+                },
+            });
+        }
 
         return res.status(200).json({
             success: true,
             message: 'Tests retrieved successfully',
-            data: tests,
+            data: course.progress?.tests || [],
         });
     } catch (error: any) {
         return res.status(500).json({

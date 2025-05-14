@@ -175,14 +175,46 @@ export const updateProject = async (req: Request, res: Response) => {
 
 export const getCourseProjects = async (req: Request, res: Response) => {
     try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+
         const { courseId } = req.params;
 
-        const projects = await Project.find({ courseId }).sort({ dueDate: -1 });
+        if (!courseId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Missing required fields',
+                error: {
+                    code: 400,
+                    details: 'Course ID is required',
+                },
+            });
+        }
+        const course = await Course.findById(courseId).populate('progress.projects');
+
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course not found',
+                error: {
+                    code: 404,
+                    details: 'Course not found',
+                },
+            });
+        }
 
         return res.status(200).json({
             success: true,
             message: 'Projects retrieved successfully',
-            data: projects,
+            data: course.progress?.projects,
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -198,6 +230,16 @@ export const getCourseProjects = async (req: Request, res: Response) => {
 
 export const deleteProject = async (req: Request, res: Response) => {
     try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
         const { projectId } = req.params;
         if (!projectId) {
             return res.status(200).json({
