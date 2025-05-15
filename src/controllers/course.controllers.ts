@@ -879,3 +879,59 @@ export const getCourseDocuments = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const getCourseTestsAndProjects = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(200).json({
+                success: false,
+                message: 'Unauthorized',
+                error: {
+                    code: 401,
+                    details: 'User not authenticated',
+                },
+            });
+        }
+        const courseId = req.params.id;
+
+        if (!courseId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Missing required fields',
+                error: {
+                    code: 400,
+                    details: 'Course ID is required',
+                },
+            });
+        }
+        const course = await Course.findById(courseId).populate('progress.tests').populate('progress.projects');
+        if (!course) {
+            return res.status(200).json({
+                success: false,
+                message: 'Course not found',
+                error: {
+                    code: 404,
+                    details: 'Course not found',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Tests and projects retrieved successfully',
+            data: {
+                tests: course.progress?.tests || [],
+                projects: course.progress?.projects || [],
+            },
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};

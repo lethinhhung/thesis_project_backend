@@ -7,6 +7,7 @@ import {
     getCompletedCourses,
     getCourse,
     getCourseDocuments,
+    getCourseTestsAndProjects,
     getOngoingCourses,
     searchCourses,
     updateCourseCover,
@@ -28,5 +29,6 @@ router.get('/search-courses', authenticate as any, searchCourses as any);
 router.patch('/update-course-details/:id', authenticate as any, updateCourseDetails as any);
 router.patch('/update-course-cover/:id', authenticate as any, upload.single('image'), updateCourseCover as any);
 router.get('/get-course-documents/:id', authenticate as any, getCourseDocuments as any);
+router.get('/get-course-tests-and-projects/:id', authenticate as any, getCourseTestsAndProjects as any);
 
 export default router;
