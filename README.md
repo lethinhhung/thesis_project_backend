@@ -23,8 +23,8 @@ Backend API for personalized learning support platform with AI integration that 
 
 1. Clone repository
 ```bash
-git clone <repository-url>
-cd Backend
+git clone https://github.com/lethinhhung/thesis_project_backend.git
+cd thesis_project_backend
 ```
 
 2. Install dependencies
@@ -35,13 +35,9 @@ yarn install
 ```
 
 3. Create environment file
-```bash  
-cp .env.example .env
-```
+Create a `.env` file in the root directory with the following variables
 
 4. Update environment variables in `.env`
-Create a `.env` file in the root directory with the following variables:
-
 ```env
 # Server Configuration
 PORT=8080
@@ -122,3 +118,18 @@ Backend/
 
 ### Upload Routes
 - POST `/api/upload` - Upload file
+
+### Test Routes
+- POST `/api/test/create-test/:courseId` - Create new test
+- GET `/api/test/get-test/:id` - Get test details
+- GET `/api/test/get-course-tests/:courseId` - Get all tests for a course
+- PATCH `/api/test/update-test/:id` - Update test
+- DELETE `/api/test/delete-test/:id` - Delete test
+
+### Project Routes
+- POST `/api/project/create-project/:courseId` - Create new project
+- GET `/api/project/get-project/:id` - Get project details
+- GET `/api/project/get-course-projects/:courseId` - Get all projects for a course
+- PATCH `/api/project/update-project/:id` - Update project details
+- PATCH `/api/project/update-project-status/:id` - Update project status
+- DELETE `/api/project/delete-project/:id` - Delete project
