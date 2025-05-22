@@ -48,6 +48,10 @@ app.use('/api/project', projectRoutes);
     try {
         await connection();
 
+        app.get('/keep-alive', (req, res) => {
+            res.status(200).send('🟢 Server is alive');
+        });
+
         app.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });
