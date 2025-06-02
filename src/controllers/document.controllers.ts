@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import Course from '../models/course';
 import Lesson from '../models/lesson';
 import PdfParse from 'pdf-parse';
+import axios from 'axios';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -71,11 +72,6 @@ export const createDocument = async (req: Request, res: Response) => {
                 },
             });
         }
-
-        // if (req.file.buffer) {
-        //     const data = await PdfParse(req.file.buffer);
-        //     console.log('PDF Metadata:', data);
-        // }
 
         const { title, courseId, lessonId } = req.body;
         if (!title) {
@@ -158,6 +154,27 @@ export const createDocument = async (req: Request, res: Response) => {
 
         user.progress?.documents.push(document._id);
         await user.save();
+
+        // Embedding PDF content
+
+        if (req.file.buffer) {
+            const data = await PdfParse(req.file.buffer);
+            await axios
+                .post(`${process.env.RAG_SERVER_URL}/v1/ingest` || 'http://localhost:8080', {
+                    userId: user._id.toString(),
+                    documentId: document._id.toString(),
+                    document: data.text,
+                })
+                .then(() => {
+                    document.status = 'completed';
+                    document.save();
+                })
+                .catch((error) => {
+                    console.error('Error embedding PDF content:', error);
+                    document.status = 'failed';
+                    document.save();
+                });
+        }
 
         return res.status(200).json({
             success: true,

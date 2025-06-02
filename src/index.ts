@@ -10,6 +10,7 @@ import documentRoutes from './routes/document.routes';
 import testRoutes from './routes/test.routes';
 import projectRoutes from './routes/project.routes';
 import uploadRoutes from './routes/upload.routes';
+import chatRoutes from './routes/chat.routes';
 import { connection } from './config/mongodb';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -43,6 +44,7 @@ app.use('/api/tag', tagRoutes);
 app.use('/api/document', documentRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/project', projectRoutes);
+app.use('/api/chat', chatRoutes);
 
 (async () => {
     try {
