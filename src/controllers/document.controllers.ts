@@ -164,6 +164,7 @@ export const createDocument = async (req: Request, res: Response) => {
                     userId: user._id.toString(),
                     documentId: document._id.toString(),
                     document: data.text,
+                    title: document.title,
                 })
                 .then(() => {
                     document.status = 'completed';
