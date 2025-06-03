@@ -64,3 +64,57 @@ export const questionController = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const createChatCompletionController = async (req: Request, res: Response) => {
+    const { messages, model } = req.body;
+    const userId = req.user?.id;
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Validation error',
+            error: {
+                code: 400,
+                details: 'Messages array is required and cannot be empty.',
+            },
+        });
+    }
+
+    try {
+        const ragApiUrl = `${process.env.RAG_SERVER_URL || 'http://localhost:8000'}/v1/chat/completions`;
+        const ragResponse = await axios.post(ragApiUrl, {
+            userId: userId,
+            messages: messages,
+            // model: model,
+        });
+
+        if (ragResponse.status === 200) {
+            return res.status(200).json({
+                success: true,
+                message: 'Chat completion successful',
+                data: ragResponse.data,
+            });
+        } else {
+            return res.status(ragResponse.status).json({
+                success: false,
+                message: 'Error from RAG service',
+                error: {
+                    code: ragResponse.status,
+                    details: ragResponse.data,
+                },
+            });
+        }
+    } catch (error: any) {
+        console.error('Error creating chat completion:', error);
+        const statusCode = error.response?.status || 500;
+        const errorDetails = error.response?.data || (error instanceof Error ? error.message : 'Unknown error');
+        return res.status(statusCode).json({
+            success: false,
+            message: 'Internal server error during chat completion',
+            error: {
+                code: statusCode,
+                details: errorDetails,
+            },
+        });
+    }
+};
