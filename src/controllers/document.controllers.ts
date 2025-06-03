@@ -431,6 +431,26 @@ export const deleteDocument = async (req: Request, res: Response) => {
         // Xóa document ID từ user's progress
         await User.updateOne({ _id: req.user.id }, { $pull: { 'progress.documents': documentId } });
 
+        const response = await axios.post(
+            `${process.env.RAG_SERVER_URL}/v1/delete-document` || 'http://localhost:8000/v1/delete-document',
+            {
+                userId: req.user?.id,
+                documentId: documentId,
+            },
+        );
+
+        if (response.status !== 200) {
+            console.error('Error removing document from RAG server:', response.data);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to remove document from RAG server',
+                error: {
+                    code: 'RAG_SERVER_ERROR',
+                    details: 'An error occurred while removing the document from the RAG server',
+                },
+            });
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Document deleted successfully',
