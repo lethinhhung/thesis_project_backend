@@ -66,7 +66,7 @@ export const questionController = async (req: Request, res: Response) => {
 };
 
 export const createChatCompletionController = async (req: Request, res: Response) => {
-    const { messages, model } = req.body;
+    const { messages, model, isUseKnowledge } = req.body;
     const userId = req.user?.id;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -82,25 +82,56 @@ export const createChatCompletionController = async (req: Request, res: Response
 
     try {
         const ragApiUrl = `${process.env.RAG_SERVER_URL || 'http://localhost:8000'}/v1/chat/completions`;
-        const ragResponse = await axios.post(ragApiUrl, {
+        const response = await axios.post(ragApiUrl, {
             userId: userId,
             messages: messages,
+            isUseKnowledge: isUseKnowledge || false,
             // model: model,
         });
 
-        if (ragResponse.status === 200) {
+        if (response.status === 200) {
+            if (
+                response.data.choices[response.data.choices.length - 1].message?.documents?.length &&
+                response.data.choices[response.data.choices.length - 1].message.documents.length > 0
+            ) {
+                const documents = await Document.find({
+                    _id: {
+                        $in: response.data.choices[response.data.choices.length - 1].message.documents.map(
+                            (doc: any) => doc.documentId,
+                        ),
+                    },
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Response fetched successfully',
+                    data: {
+                        ...response.data,
+                        choices: [
+                            {
+                                ...response.data.choices[0],
+                                message: {
+                                    ...response.data.choices[0].message,
+                                    documents,
+                                },
+                            },
+                        ],
+                    },
+                });
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Chat completion successful',
-                data: ragResponse.data,
+                data: response.data,
             });
         } else {
-            return res.status(ragResponse.status).json({
+            return res.status(response.status).json({
                 success: false,
                 message: 'Error from RAG service',
                 error: {
-                    code: ragResponse.status,
-                    details: ragResponse.data,
+                    code: response.status,
+                    details: response.data,
                 },
             });
         }
