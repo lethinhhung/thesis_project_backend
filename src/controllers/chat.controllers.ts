@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
+import Document from '../models/document';
 
 export const questionController = async (req: Request, res: Response) => {
     const { question } = req.body;
@@ -18,6 +19,30 @@ export const questionController = async (req: Request, res: Response) => {
         );
 
         if (response.status === 200) {
+            // If the reponse contains a 'documents' field, you can handle it accordingly.
+            if (response.data.choices[0].message.documents.length > 0) {
+                const documents = await Document.find({
+                    _id: { $in: response.data.choices[0].message.documents.map((doc: any) => doc.documentId) },
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Response fetched successfully',
+                    data: {
+                        ...response.data,
+                        choices: [
+                            {
+                                ...response.data.choices[0],
+                                message: {
+                                    ...response.data.choices[0].message,
+                                    documents,
+                                },
+                            },
+                        ],
+                    },
+                });
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Response fetched successfully',
