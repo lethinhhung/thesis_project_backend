@@ -66,7 +66,7 @@ export const questionController = async (req: Request, res: Response) => {
 };
 
 export const createChatCompletionController = async (req: Request, res: Response) => {
-    const { messages, model, isUseKnowledge } = req.body;
+    const { messages, isUseKnowledge, model } = req.body;
     const userId = req.user?.id;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -86,7 +86,7 @@ export const createChatCompletionController = async (req: Request, res: Response
             userId: userId,
             messages: messages,
             isUseKnowledge: isUseKnowledge || false,
-            // model: model,
+            model: model,
         });
 
         if (response.status === 200) {
