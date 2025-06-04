@@ -7,8 +7,15 @@ import { deleteDocument as deleteDocumentUtils } from '../utils/upload';
 import mongoose from 'mongoose';
 import Course from '../models/course';
 import Lesson from '../models/lesson';
-import PdfParse from 'pdf-parse';
 import axios from 'axios';
+import PdfParse from 'pdf-parse';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import mammoth from 'mammoth';
+import xlsx from 'xlsx';
+import { extname } from 'path';
+import PptxParser from 'node-pptx-parser';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -155,27 +162,79 @@ export const createDocument = async (req: Request, res: Response) => {
         user.progress?.documents.push(document._id);
         await user.save();
 
-        // Embedding PDF content
+        // Embedding file content
 
-        if (req.file.buffer) {
-            const data = await PdfParse(req.file.buffer);
-            await axios
-                .post(`${process.env.RAG_SERVER_URL}/v1/ingest` || 'http://localhost:8080', {
-                    userId: user._id.toString(),
-                    documentId: document._id.toString(),
-                    document: data.text,
-                    title: document.title,
-                })
-                .then(() => {
-                    document.status = 'completed';
-                    document.save();
-                })
-                .catch((error) => {
-                    console.error('Error embedding PDF content:', error);
-                    document.status = 'failed';
-                    document.save();
-                });
+        const file = req.file;
+        const ext = extname(file.originalname).toLowerCase();
+        const tempPath = path.join(os.tmpdir(), `${Date.now()}-${file.originalname}`);
+        let textContent = '';
+
+        fs.writeFileSync(tempPath, file.buffer);
+
+        switch (ext) {
+            case '.pdf': {
+                const data = await PdfParse(file.buffer);
+                textContent = data.text;
+                break;
+            }
+            case '.docx': {
+                const result = await mammoth.extractRawText({ path: tempPath });
+                textContent = result.value;
+                break;
+            }
+            case '.xlsx': {
+                const workbook = xlsx.readFile(tempPath);
+                textContent = workbook.SheetNames.map((name) => xlsx.utils.sheet_to_csv(workbook.Sheets[name])).join(
+                    '\n',
+                );
+                break;
+            }
+            case '.pptx': {
+                const parser = new PptxParser(tempPath);
+                const xmlArray = await parser.extractText();
+                textContent = xmlArray.map((slide) => slide.text).join('\n');
+                break;
+            }
+            default:
+                return res.status(400).json({ error: 'Unsupported file type' });
         }
+
+        await axios
+            .post(`${process.env.RAG_SERVER_URL}/v1/ingest` || 'http://localhost:8080', {
+                userId: user._id.toString(),
+                documentId: document._id.toString(),
+                document: textContent,
+                title: document.title,
+            })
+            .then(() => {
+                document.status = 'completed';
+                document.save();
+            })
+            .catch((error) => {
+                console.error('Error embedding PDF content:', error);
+                document.status = 'failed';
+                document.save();
+            });
+
+        // if (req.file.buffer) {
+        //     const data = await PdfParse(req.file.buffer);
+        //     await axios
+        //         .post(`${process.env.RAG_SERVER_URL}/v1/ingest` || 'http://localhost:8080', {
+        //             userId: user._id.toString(),
+        //             documentId: document._id.toString(),
+        //             document: data.text,
+        //             title: document.title,
+        //         })
+        //         .then(() => {
+        //             document.status = 'completed';
+        //             document.save();
+        //         })
+        //         .catch((error) => {
+        //             console.error('Error embedding PDF content:', error);
+        //             document.status = 'failed';
+        //             document.save();
+        //         });
+        // }
 
         return res.status(200).json({
             success: true,
@@ -188,6 +247,7 @@ export const createDocument = async (req: Request, res: Response) => {
             data: document,
         });
     } catch (error: any) {
+        console.error('Error creating document:', error);
         return res.status(500).json({
             success: false,
             message: 'Internal server error',
