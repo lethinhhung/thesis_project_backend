@@ -87,6 +87,7 @@ export const createChatCompletionController = async (req: Request, res: Response
             messages: messages,
             isUseKnowledge: isUseKnowledge || false,
             model: model,
+            // courseId: '',
         });
 
         if (response.status === 200) {

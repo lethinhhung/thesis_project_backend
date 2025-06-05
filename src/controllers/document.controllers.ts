@@ -205,6 +205,8 @@ export const createDocument = async (req: Request, res: Response) => {
                 documentId: document._id.toString(),
                 document: textContent,
                 title: document.title,
+                courseId: courseId ? courseId.toString() : null,
+                courseTitle: await Course.findById(courseId).then((course) => course?.title || null),
             })
             .then(() => {
                 document.status = 'completed';
