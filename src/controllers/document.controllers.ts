@@ -58,7 +58,7 @@ export const createDocument = async (req: Request, res: Response) => {
             'application/rtf', // .rtf
         ];
 
-        if (req.file && !allowedTypes.includes(req.file.mimetype)) {
+        if (req.file && !allowedTypes.includes(req.file.mimetype) && !req.file.originalname.endsWith('.md')) {
             return res.status(200).json({
                 success: false,
                 message: 'Invalid file type',
@@ -166,6 +166,7 @@ export const createDocument = async (req: Request, res: Response) => {
 
         const file = req.file;
         const ext = extname(file.originalname).toLowerCase();
+        console.log('File extension:', ext);
         const tempPath = path.join(os.tmpdir(), `${Date.now()}-${file.originalname}`);
         let textContent = '';
 
@@ -193,6 +194,10 @@ export const createDocument = async (req: Request, res: Response) => {
                 const parser = new PptxParser(tempPath);
                 const xmlArray = await parser.extractText();
                 textContent = xmlArray.map((slide) => slide.text).join('\n');
+                break;
+            }
+            case '.md': {
+                textContent = fs.readFileSync(tempPath, 'utf-8');
                 break;
             }
             default:
