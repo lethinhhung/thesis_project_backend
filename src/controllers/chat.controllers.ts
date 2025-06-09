@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import Document from '../models/document';
+import Chat from '../models/chat';
 
 export const questionController = async (req: Request, res: Response) => {
     const { question } = req.body;
@@ -66,7 +67,7 @@ export const questionController = async (req: Request, res: Response) => {
 };
 
 export const createChatCompletionController = async (req: Request, res: Response) => {
-    const { messages, isUseKnowledge, model, courseId } = req.body;
+    const { messages, isUseKnowledge, model, courseId, _id } = req.body;
     const userId = req.user?.id;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -76,6 +77,16 @@ export const createChatCompletionController = async (req: Request, res: Response
             error: {
                 code: 400,
                 details: 'Messages array is required and cannot be empty.',
+            },
+        });
+    }
+    if (!userId) {
+        return res.status(401).json({
+            success: false,
+            message: 'Unauthorized',
+            error: {
+                code: 401,
+                details: 'User ID is required.',
             },
         });
     }
@@ -91,41 +102,137 @@ export const createChatCompletionController = async (req: Request, res: Response
         });
 
         if (response.status === 200) {
-            if (
-                response.data.choices[response.data.choices.length - 1].message?.documents?.length &&
-                response.data.choices[response.data.choices.length - 1].message.documents.length > 0
-            ) {
-                const documents = await Document.find({
-                    _id: {
-                        $in: response.data.choices[response.data.choices.length - 1].message.documents.map(
-                            (doc: any) => doc.documentId,
-                        ),
-                    },
+            if (!_id) {
+                const chat = await Chat.create({
+                    userId: userId,
+                    messages: [
+                        ...messages,
+                        {
+                            role: response.data.choices[0].message.role,
+                            content: response.data.choices[0].message.content,
+                        },
+                    ],
+                    title: messages[0]?.content || 'Chat with RAG',
                 });
+
+                if (!chat) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Chat not found or could not be created',
+                        error: {
+                            code: 404,
+                            details: 'Chat not found or could not be created.',
+                        },
+                    });
+                }
+
+                if (
+                    response.data.choices[response.data.choices.length - 1].message?.documents?.length &&
+                    response.data.choices[response.data.choices.length - 1].message.documents.length > 0
+                ) {
+                    const documents = await Document.find({
+                        _id: {
+                            $in: response.data.choices[response.data.choices.length - 1].message.documents.map(
+                                (doc: any) => doc.documentId,
+                            ),
+                        },
+                    });
+
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Response fetched successfully',
+                        data: {
+                            _id: chat._id,
+                            ...response.data,
+                            choices: [
+                                {
+                                    ...response.data.choices[0],
+                                    message: {
+                                        ...response.data.choices[0].message,
+                                        documents,
+                                    },
+                                },
+                            ],
+                        },
+                    });
+                }
 
                 return res.status(200).json({
                     success: true,
-                    message: 'Response fetched successfully',
+                    message: 'Chat completion successful',
                     data: {
+                        _id: chat._id,
                         ...response.data,
-                        choices: [
-                            {
-                                ...response.data.choices[0],
-                                message: {
-                                    ...response.data.choices[0].message,
-                                    documents,
+                    },
+                });
+            } else {
+                const chat = await Chat.findByIdAndUpdate(
+                    _id,
+                    {
+                        $set: {
+                            messages: [
+                                ...messages,
+                                {
+                                    role: response.data.choices[0].message.role,
+                                    content: response.data.choices[0].message.content,
                                 },
-                            },
-                        ],
+                            ],
+                        },
+                    },
+                    { new: true },
+                );
+
+                if (!chat) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Chat not found or could not be created',
+                        error: {
+                            code: 404,
+                            details: 'Chat not found or could not be created.',
+                        },
+                    });
+                }
+
+                if (
+                    response.data.choices[response.data.choices.length - 1].message?.documents?.length &&
+                    response.data.choices[response.data.choices.length - 1].message.documents.length > 0
+                ) {
+                    const documents = await Document.find({
+                        _id: {
+                            $in: response.data.choices[response.data.choices.length - 1].message.documents.map(
+                                (doc: any) => doc.documentId,
+                            ),
+                        },
+                    });
+
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Response fetched successfully',
+                        data: {
+                            _id: chat._id,
+                            ...response.data,
+                            choices: [
+                                {
+                                    ...response.data.choices[0],
+                                    message: {
+                                        ...response.data.choices[0].message,
+                                        documents,
+                                    },
+                                },
+                            ],
+                        },
+                    });
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Chat completion successful',
+                    data: {
+                        _id: chat._id,
+                        ...response.data,
                     },
                 });
             }
-
-            return res.status(200).json({
-                success: true,
-                message: 'Chat completion successful',
-                data: response.data,
-            });
         } else {
             return res.status(response.status).json({
                 success: false,
@@ -146,6 +253,87 @@ export const createChatCompletionController = async (req: Request, res: Response
             error: {
                 code: statusCode,
                 details: errorDetails,
+            },
+        });
+    }
+};
+
+export const getChatCompletionController = async (req: Request, res: Response) => {
+    const { _id } = req.query;
+
+    if (!_id || typeof _id !== 'string') {
+        return res.status(400).json({
+            success: false,
+            message: 'Validation error',
+            error: {
+                code: 400,
+                details: 'Chat ID is required.',
+            },
+        });
+    }
+
+    try {
+        const chat = await Chat.findById(_id);
+
+        if (!chat) {
+            return res.status(404).json({
+                success: false,
+                message: 'Chat not found',
+                error: {
+                    code: 404,
+                    details: 'Chat not found.',
+                },
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Chat fetched successfully',
+            data: chat,
+        });
+    } catch (error) {
+        console.error('Error fetching chat:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 500,
+                details: error instanceof Error ? error.message : 'Unknown error',
+            },
+        });
+    }
+};
+
+export const getAllChatsController = async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+        return res.status(401).json({
+            success: false,
+            message: 'Unauthorized',
+            error: {
+                code: 401,
+                details: 'User ID is required.',
+            },
+        });
+    }
+
+    try {
+        const chats = await Chat.find({ userId }).select('_id title').sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Chats fetched successfully',
+            data: chats,
+        });
+    } catch (error) {
+        console.error('Error fetching chats:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 500,
+                details: error instanceof Error ? error.message : 'Unknown error',
             },
         });
     }
