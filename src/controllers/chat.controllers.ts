@@ -115,6 +115,13 @@ export const createChatCompletionController = async (req: Request, res: Response
                     title: messages[0]?.content || 'Chat with RAG',
                 });
 
+                // Keep chats under 10 chat
+                const userChats = await Chat.find({ userId }).sort({ createdAt: -1 });
+                if (userChats.length > 10) {
+                    const chatsToDelete = userChats.slice(10);
+                    await Chat.deleteMany({ _id: { $in: chatsToDelete.map((chat) => chat._id) } });
+                }
+
                 if (!chat) {
                     return res.status(404).json({
                         success: false,
@@ -137,6 +144,11 @@ export const createChatCompletionController = async (req: Request, res: Response
                             ),
                         },
                     });
+
+                    if (documents && documents.length > 0) {
+                        chat.messages[chat.messages.length - 1].documents = documents.map((doc) => doc._id);
+                        await chat.save();
+                    }
 
                     return res.status(200).json({
                         success: true,
@@ -204,6 +216,11 @@ export const createChatCompletionController = async (req: Request, res: Response
                             ),
                         },
                     });
+
+                    if (documents && documents.length > 0) {
+                        chat.messages[chat.messages.length - 1].documents = documents.map((doc) => doc._id);
+                        await chat.save();
+                    }
 
                     return res.status(200).json({
                         success: true,
@@ -273,7 +290,14 @@ export const getChatCompletionController = async (req: Request, res: Response) =
     }
 
     try {
-        const chat = await Chat.findById(_id);
+        //Populate the chat with messages and documents
+        const chat = await Chat.findById(_id).populate({
+            path: 'messages',
+            populate: {
+                path: 'documents',
+                model: 'document',
+            },
+        });
 
         if (!chat) {
             return res.status(404).json({

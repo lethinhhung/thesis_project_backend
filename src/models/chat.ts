@@ -10,6 +10,7 @@ const chatSchema = new mongoose.Schema({
         {
             role: { type: String, enum: ['user', 'assistant'], required: true },
             content: { type: String, required: true },
+            documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'document' }],
             createdAt: { type: Date, default: Date.now },
         },
     ],
