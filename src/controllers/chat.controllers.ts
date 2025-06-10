@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import axios from 'axios';
 import Document from '../models/document';
 import Chat from '../models/chat';
+import User from '../models/user';
 
 export const questionController = async (req: Request, res: Response) => {
     const { question } = req.body;
@@ -115,7 +116,42 @@ export const createChatCompletionController = async (req: Request, res: Response
                     title: messages[0]?.content || 'Chat with RAG',
                 });
 
+                if (!chat) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Chat not found or could not be created',
+                        error: {
+                            code: 404,
+                            details: 'Chat not found or could not be created.',
+                        },
+                    });
+                }
                 // Keep chats under 10 chat
+                const userProgress = await User.findByIdAndUpdate(
+                    userId,
+                    { $addToSet: { 'progress.chats': chat._id } },
+                    { new: true },
+                );
+
+                if (!userProgress || !userProgress.progress) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'User not found or could not be updated',
+                        error: {
+                            code: 404,
+                            details: 'User not found or could not be updated.',
+                        },
+                    });
+                }
+                if (userProgress.progress.chats.length > 10) {
+                    const chatsToDelete = userProgress.progress.chats.slice(10);
+                    await Chat.deleteMany({ _id: { $in: chatsToDelete } });
+                    userProgress.progress.chats = userProgress.progress.chats.slice(0, 10);
+                    await userProgress.save();
+                }
+
+                // Keep chats under 10 chat
+
                 const userChats = await Chat.find({ userId }).sort({ createdAt: -1 });
                 if (userChats.length > 10) {
                     const chatsToDelete = userChats.slice(10);

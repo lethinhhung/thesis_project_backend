@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema({
         images: [{ type: mongoose.Schema.Types.ObjectId, ref: 'image' }],
         tests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'test' }],
         projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'project' }],
+        chats: [{ type: mongoose.Schema.Types.ObjectId, ref: 'chat' }],
     },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
