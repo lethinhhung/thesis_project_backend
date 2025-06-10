@@ -344,7 +344,7 @@ export const getAllChatsController = async (req: Request, res: Response) => {
     }
 
     try {
-        const chats = await Chat.find({ userId }).select('_id title').sort({ createdAt: -1 });
+        const chats = await Chat.find({ userId }).select('_id title').sort({ updatedAt: -1 });
 
         return res.status(200).json({
             success: true,
