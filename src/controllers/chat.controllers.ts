@@ -189,6 +189,7 @@ export const createChatCompletionController = async (req: Request, res: Response
                                     content: response.data.choices[0].message.content,
                                 },
                             ],
+                            updatedAt: new Date(),
                         },
                     },
                     { new: true },
