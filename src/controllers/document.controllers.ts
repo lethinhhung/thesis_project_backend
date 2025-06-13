@@ -16,6 +16,7 @@ import mammoth from 'mammoth';
 import xlsx from 'xlsx';
 import { extname } from 'path';
 import PptxParser from 'node-pptx-parser';
+import Chat from '../models/chat';
 
 export const createDocument = async (req: Request, res: Response) => {
     try {
@@ -490,7 +491,6 @@ export const deleteDocument = async (req: Request, res: Response) => {
         }
 
         // Xóa document ID từ lesson
-
         if (document.lessons && document.lessons.length > 0) {
             await Lesson.updateMany({ _id: { $in: document.lessons } }, { $pull: { refDocuments: document._id } });
             await Lesson.updateMany({ _id: { $in: document.lessons } }, { updatedAt: new Date() });
@@ -499,6 +499,17 @@ export const deleteDocument = async (req: Request, res: Response) => {
         // Xóa document ID từ user's progress
         await User.updateOne({ _id: req.user.id }, { $pull: { 'progress.documents': documentId } });
 
+        // Remove document from chat messages
+        await Chat.updateMany(
+            { userId: req.user.id },
+            {
+                $pull: {
+                    'messages.$[].documents': documentId,
+                },
+            },
+        );
+
+        // Remove document from RAG server
         const response = await axios.post(
             `${process.env.RAG_SERVER_URL}/v1/delete-document` || 'http://localhost:8000/v1/delete-document',
             {
