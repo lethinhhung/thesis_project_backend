@@ -126,7 +126,25 @@ export const createChatCompletionController = async (req: Request, res: Response
                         },
                     });
                 }
-                // Keep chats under 10 chat
+
+                // Find the oldest chat and total chat count for this user
+                const userChats = await User.findById(userId).select('progress.chats');
+                const chatCount = userChats?.progress?.chats?.length || 0;
+
+                // If user has 10 or more chats, remove the oldest one
+                if (chatCount >= 10) {
+                    const oldestChat = await Chat.findOne({
+                        userId,
+                        _id: { $in: userChats?.progress?.chats || [] },
+                    }).sort({ updatedAt: 1 });
+
+                    if (oldestChat) {
+                        await Chat.findByIdAndDelete(oldestChat._id);
+                        await User.findByIdAndUpdate(userId, { $pull: { 'progress.chats': oldestChat._id } });
+                    }
+                }
+
+                // Add the new chat
                 const userProgress = await User.findByIdAndUpdate(
                     userId,
                     { $addToSet: { 'progress.chats': chat._id } },
@@ -142,20 +160,6 @@ export const createChatCompletionController = async (req: Request, res: Response
                             details: 'User not found or could not be updated.',
                         },
                     });
-                }
-                if (userProgress.progress.chats.length > 10) {
-                    const chatsToDelete = userProgress.progress.chats.slice(10);
-                    await Chat.deleteMany({ _id: { $in: chatsToDelete } });
-                    userProgress.progress.chats = userProgress.progress.chats.slice(0, 10);
-                    await userProgress.save();
-                }
-
-                // Keep chats under 10 chat
-
-                const userChats = await Chat.find({ userId }).sort({ createdAt: -1 });
-                if (userChats.length > 10) {
-                    const chatsToDelete = userChats.slice(10);
-                    await Chat.deleteMany({ _id: { $in: chatsToDelete.map((chat) => chat._id) } });
                 }
 
                 if (!chat) {
