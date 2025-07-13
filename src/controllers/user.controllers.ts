@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
 import User from '../models/user';
+import Course from '../models/course';
+import Lesson from '../models/lesson';
+import Document from '../models/document';
+import Test from '../models/test';
+import Project from '../models/project';
+import Chat from '../models/chat';
 import { deleteAvatar, uploadAvatar } from '../utils/upload';
 
 export const getProfile = async (req: Request, res: Response) => {
@@ -136,6 +142,124 @@ export const updateProfile = async (req: Request, res: Response) => {
             success: true,
             message: 'Profile updated successfully',
             data: user,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+// Admin: Lấy tất cả users
+export const getAllUsers = async (req: Request, res: Response) => {
+    try {
+        const users = await User.find().select('-password -__v');
+
+        return res.status(200).json({
+            success: true,
+            message: 'Users retrieved successfully',
+            data: {
+                users: users,
+            },
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+// Admin: Xóa user
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(200).json({
+                success: false,
+                message: 'User not found',
+                error: {
+                    code: 404,
+                    details: `No user found with ID ${userId}`,
+                },
+            });
+        }
+
+        // Không cho phép xóa admin khác
+        if (user.role === 'admin' && req.user?.id !== userId) {
+            return res.status(200).json({
+                success: false,
+                message: 'Cannot delete another admin',
+                error: {
+                    code: 403,
+                    details: 'You cannot delete another admin account',
+                },
+            });
+        }
+
+        //Xóa hết mọi dữ liệu liên quan đến user
+        await Course.deleteMany({ userId });
+        await Lesson.deleteMany({ userId });
+        await Document.deleteMany({ userId });
+        await Test.deleteMany({ userId });
+        await Project.deleteMany({ userId });
+        await Chat.deleteMany({ userId });
+
+        await User.findByIdAndDelete(userId);
+
+        return res.status(200).json({
+            success: true,
+            message: 'User deleted successfully',
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message || 'An unexpected error occurred',
+            },
+        });
+    }
+};
+
+// Admin: Thống kê hệ thống
+export const getSystemStats = async (req: Request, res: Response) => {
+    try {
+        const [totalUsers, totalCourses, totalLessons, totalDocuments, totalTests, totalProjects, totalChats] =
+            await Promise.all([
+                User.countDocuments(),
+                Course.countDocuments(),
+                Lesson.countDocuments(),
+                Document.countDocuments(),
+                Test.countDocuments(),
+                Project.countDocuments(),
+                Chat.countDocuments(),
+            ]);
+
+        return res.status(200).json({
+            success: true,
+            message: 'System statistics retrieved successfully',
+            data: {
+                totalUsers,
+                totalCourses,
+                totalLessons,
+                totalDocuments,
+                totalTests,
+                totalProjects,
+                totalChats,
+            },
         });
     } catch (error: any) {
         return res.status(500).json({

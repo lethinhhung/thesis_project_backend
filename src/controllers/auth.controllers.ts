@@ -78,6 +78,7 @@ export const register = async (req: Request, res: Response) => {
                 id: newUser._id,
                 username: newUser.username,
                 email: newUser.email,
+                role: newUser.role,
             },
         });
     } catch (error) {
@@ -139,6 +140,7 @@ export const login = async (req: Request, res: Response) => {
                         email: user.email,
                         avatar: user.profile?.avatar || null,
                         accessToken,
+                        role: user.role,
                     },
                 });
             } else {
@@ -210,6 +212,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
             username: user.username,
             email: user.email,
             avatar: user.profile?.avatar || null,
+            role: user.role,
         };
 
         const accessToken = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: ACCESS_TOKEN_EXPIRY });
