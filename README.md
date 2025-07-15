@@ -61,7 +61,7 @@ SUPABASE_DOCUMENTS_BUCKET_NAME=documents_bucket_name
 (Under development)
 ```
 
-6. Start development server
+5. Start development server
 ```bash
 npm run dev
 # or
