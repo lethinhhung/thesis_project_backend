@@ -1,4 +1,4 @@
-# AI-Powered Study Assistant Platform (Ongoing)
+# NOTEBOK - NOTE MANAGEMENT AND RAG INTEGRATION FOR Q&A (GRADUATION THESIS PROJECT)
 
 Backend API for personalized learning support platform with AI integration that helps students manage notes, track study progress, and generate quizzes or tests based on uploaded documents.
 
